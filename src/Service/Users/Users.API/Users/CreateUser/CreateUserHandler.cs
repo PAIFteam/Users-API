@@ -1,17 +1,27 @@
-﻿using MediatR;
-using Users.API.Enums;
+﻿using BuildingBlocks.CQRS;
 
 namespace Users.API.Users.CreateUser;
 
 //will be our logical handler for creating a user
 
 public record CreateUserCommand(string Name, string Login, string Password, string Email, DateTime DateBirth, EnumProfile IdProfile)
-    : IRequest<CreateUserResult>;
-public record CreateUserResult(int IdUser);
-internal class CreateUserCommandHandler : IRequestHandler<CreateUserCommand, CreateUserResult>
+    : ICommand<CreateUserResult>;
+public record CreateUserResult(Guid IdUser);
+internal class CreateUserCommandHandler : ICommandHandler<CreateUserCommand, CreateUserResult>
 {
-    public Task<CreateUserResult> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+    public async Task<CreateUserResult> Handle(CreateUserCommand command, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+        var users = new UserModel
+        {
+            Name = command.Name,
+            Login = command.Login,
+            Password = command.Password,
+            Email = command.Email,
+            DateBirth = command.DateBirth,
+            IdProfile = command.IdProfile
+        };
+
+
+        return new CreateUserResult(Guid.NewGuid());
     }
 }

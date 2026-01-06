@@ -1,10 +1,8 @@
-﻿using Users.API.Enums;
-
-namespace Users.API.Models; 
+﻿namespace Users.API.Models; 
 
 public class UserModel
 {
-    public int IdUser { get; set; }
+    public Guid IdUser { get; set; }
     public string Name { get; set; }
     public string Login { get; set; }
     public string Password { get; set; }
@@ -14,7 +12,7 @@ public class UserModel
 
     public UserModel() { }
 
-    public UserModel(int idUser, string name, string login, string password, string email, DateTime dateBirth, EnumProfile idProfile)
+    public UserModel(Guid idUser, string name, string login, string password, string email, DateTime dateBirth, EnumProfile idProfile)
     {
         IdUser = idUser;
         Name = name;
