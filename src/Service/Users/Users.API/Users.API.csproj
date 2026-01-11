@@ -11,13 +11,38 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Carter" Version="8.0.0" />
-    <PackageReference Include="Marten" Version="8.17.0" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
+    <Compile Remove="GlobalUsings.cs" />
+    <Compile Remove="Users\CreateUser\CreateUserEndpoint.cs" />
+    <Compile Remove="Users\CreateUser\CreateUserHandler.cs" />
+    <Compile Remove="Users\DeleteUser\DeleteUserEndpoint.cs" />
+    <Compile Remove="Users\DeleteUser\DeleteUserHandler.cs" />
+    <Compile Remove="Users\GetUserById\GetUserByIdEndpoint.cs" />
+    <Compile Remove="Users\GetUserById\GetUserByIdHandler.cs" />
+    <Compile Remove="Users\GetUser\GetUsersEndpoint.cs" />
+    <Compile Remove="Users\GetUser\GetUsersHandler.cs" />
+    <Compile Remove="Users\UpdateUser\UpdateUserEndpoint.cs" />
+    <Compile Remove="Users\UpdateUser\UpdateUserHandler.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingBlocks\BuildingBlocks\BuildingBlocks.csproj" />
+    <None Remove="Dockerfile" />
+    <None Remove="Dockerfile.original" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Users.Infra\Users.Infra.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Users\CreateUser\" />
+    <Folder Include="Users\DeleteUser\" />
+    <Folder Include="Users\GetUserById\" />
+    <Folder Include="Users\GetUser\" />
+    <Folder Include="Users\UpdateUser\" />
   </ItemGroup>
 
 </Project>
