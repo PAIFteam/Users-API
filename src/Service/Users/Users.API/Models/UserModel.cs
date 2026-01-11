@@ -1,5 +1,11 @@
-﻿namespace Users.API.Models; 
+﻿using Users.API.Enums;
 
+namespace Users.API.Models;
+public class Mensagem
+{
+    public string Saudacao { get; set; }
+    public string Horario { get; init; } = $"{DateTime.Now:HH:mm:ss}";
+}
 public class UserModel
 {
     public Guid IdUser { get; set; }
