@@ -1,12 +1,8 @@
 using Users.API.Extensions;
-using Users.Core.Application.UseCases.Users.GetUsers;
-using Users.Core.Domain.Entities;
 using Users.Infra.Extensions;
 using Users.Core.Application.Settings;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.IdentityModel.Tokens;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
+using MassTransit;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -34,6 +30,18 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfraestructure();
 builder.Services.AddRabbitMq(builder.Configuration);
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host("localhost", "/", h =>
+        {
+            h.Username("guest");
+            h.Password("guest");
+        });
+    });
+});
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
