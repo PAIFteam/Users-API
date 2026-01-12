@@ -1,17 +1,13 @@
-﻿using Users.Core.Domain.Interfaces.Publishers;
+﻿using Users.Core.Domain.Interfaces;
 using Users.Infra.RabbitMq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MassTransit;
 
 
 namespace Users.Core.Application.Settings
 {
     public static class RabbitMqSettings
     {
-        public static IServiceCollection AddRabbitMqSettings(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddRabbitMq(this IServiceCollection services, IConfiguration configuration)
         {
             var rabbitMqConfigurationsSettings = new Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings();
 
@@ -19,9 +15,9 @@ namespace Users.Core.Application.Settings
                 .GetSection(Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings.OPTION_KEY)
                 .Bind(rabbitMqConfigurationsSettings);
             services.AddScoped<IPublisher, Publisher>();
+            services.AddScoped(_ => rabbitMqConfigurationsSettings);
+            
 
-
-            services.Configure<Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings>(configuration.GetSection(Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings.OPTION_KEY));
             return services;
         }
     }

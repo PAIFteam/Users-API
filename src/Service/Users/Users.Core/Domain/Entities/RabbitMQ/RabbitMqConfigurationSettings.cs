@@ -9,7 +9,7 @@ namespace Users.Core.Domain.Entities.RabbitMQ
 {
     public class RabbitMqConfigurationSettings
     {
-        public const string OPTION_KEY = "RabbitMqSettings";
+        public const string OPTION_KEY = "RabbitSettings";
 
         public string HostName { get; set; }
         public string Username { get; set; }

@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Users.Core.Application.UseCases.Users.PutUser;
 using Users.Core.Domain.Entities;
 
 namespace Users.Core.Domain.Interfaces
 {
-    public interface IWelcomeCustomerOnQueueAppService
+    public interface IPutUserUseCase
     {
-        Task<bool> SendWelcomeCustomerToQueueAsync(User user);
+        public Task<PutUserOutPut> ExecuteAsync(PutUserInput input);
     }
 }

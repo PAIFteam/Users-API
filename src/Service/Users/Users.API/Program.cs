@@ -33,7 +33,7 @@ var key = Encoding.ASCII.GetBytes("abc123");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfraestructure();
-builder.Services.AddRabbitMqSettings(builder.Configuration);
+builder.Services.AddRabbitMq(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

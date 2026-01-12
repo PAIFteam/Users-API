@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="RabbitMq\IPublisher.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Data\Repositories\Helpers\" />
     <Folder Include="Data\Repositories\Scripts\" />
     <Folder Include="RabbitMq\Publishers\" />
@@ -14,7 +18,10 @@
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
-    <PackageReference Include="MassTransit" Version="7.0.7" />
+    <PackageReference Include="MassTransit.AspNetCore" Version="7.0.7" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.7" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.0.7" />
+    <PackageReference Include="MessagePack" Version="3.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />

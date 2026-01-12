@@ -1,8 +1,6 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
-using System.Threading.Tasks;
+﻿using Users.Core.Domain.Interfaces;
 using MassTransit;
-using Users.Core.Domain.Interfaces.Publishers;
+
 
 namespace Users.Infra.RabbitMq
 {
@@ -17,7 +15,7 @@ namespace Users.Infra.RabbitMq
         public async Task Publish<T>(T content, Uri queueAddress)
         {
             var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(queueAddress);
-            sendEndpoint.Send(content);
+            await sendEndpoint.Send(content);
         }
     }
 }
