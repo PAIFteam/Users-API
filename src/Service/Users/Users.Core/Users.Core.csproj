@@ -8,12 +8,10 @@
 
   <ItemGroup>
     <Folder Include="Application\Commons\Enums\" />
-    <Folder Include="Application\Configurations\" />
     <Folder Include="Application\Mappings\" />
     <Folder Include="Application\UseCases\Games\" />
     <Folder Include="Application\UseCases\Promotions\" />
     <Folder Include="Domain\Azure\" />
-    <Folder Include="Domain\Interfaces\Publishers\" />
     <Folder Include="Domain\Messages\Contracts\" />
     <Folder Include="Domain\Messages\Envelopes\" />
     <Folder Include="Domain\Models\" />

@@ -2,6 +2,7 @@ using Users.API.Extensions;
 using Users.Core.Application.UseCases.Users.GetUsers;
 using Users.Core.Domain.Entities;
 using Users.Infra.Extensions;
+using Users.Core.Application.Settings;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Runtime.InteropServices.Marshalling;
@@ -32,7 +33,7 @@ var key = Encoding.ASCII.GetBytes("abc123");
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddInfraestructure();
-
+builder.Services.AddRabbitMqSettings(builder.Configuration);
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

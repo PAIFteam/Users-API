@@ -9,11 +9,12 @@
   <ItemGroup>
     <Folder Include="Data\Repositories\Helpers\" />
     <Folder Include="Data\Repositories\Scripts\" />
-    <Folder Include="Kafka\Publishers\" />
+    <Folder Include="RabbitMq\Publishers\" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Dapper" Version="2.1.66" />
+    <PackageReference Include="MassTransit" Version="7.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.9" />

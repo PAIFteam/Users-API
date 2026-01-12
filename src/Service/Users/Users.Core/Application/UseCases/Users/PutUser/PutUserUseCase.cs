@@ -1,10 +1,11 @@
-﻿using Users.Core.Domain.Entities;
-using Users.Core.Domain.Entities.Base;
-using Users.Core.Domain.Interfaces;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Logging;
+﻿using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
-
+using Users.Core.Domain.Entities;
+using Users.Core.Domain.Entities.Base;
+using Users.Core.Domain.Entities.RabbitMQ;
+using Users.Core.Domain.Interfaces;
+using Users.Core.Domain.Interfaces.Publishers;
+using Users.Core.Entities.RabbitMq;
 
 namespace Users.Core.Application.UseCases.Users.PutUser
 {
@@ -12,7 +13,8 @@ namespace Users.Core.Application.UseCases.Users.PutUser
     {
         private readonly IPutUserRepository _putUserRepository;
         private readonly ILogger<PutUserUseCase> _logger;
-
+        private readonly IPublisher _publisher;
+        private readonly RabbitMqConfigurationSettings _rabbitMqConfigurationSettings;
         public PutUserUseCase(
             IPutUserRepository putUserRepository,
             ILogger<PutUserUseCase> logger
@@ -43,6 +45,10 @@ namespace Users.Core.Application.UseCases.Users.PutUser
                 }
 
                 int idUser = await _putUserRepository.PutUserAsync(input.MapToUser());
+
+                var message = new WelcomeCustomerMessage(input.Name, input.Login, input.Email);
+
+                _ = _publisher.Publish(message, _rabbitMqConfigurationSettings.GetQueueAdress());
 
                 PutUserOutPut outPut = new PutUserOutPut
                 {
