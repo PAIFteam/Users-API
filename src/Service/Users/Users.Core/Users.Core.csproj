@@ -7,6 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Domain\Interfaces\Publishers\**" />
+    <EmbeddedResource Remove="Domain\Interfaces\Publishers\**" />
+    <None Remove="Domain\Interfaces\Publishers\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="Application\Commons\Enums\" />
     <Folder Include="Application\Mappings\" />
     <Folder Include="Application\UseCases\Games\" />
@@ -22,5 +28,8 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.9" />
+    <PackageReference Include="MassTransit.AspNetCore" Version="7.0.7" />
+    <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.7" />
+    <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.0.7" />
   </ItemGroup>
 </Project>

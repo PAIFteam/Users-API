@@ -1,15 +1,18 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using System.Text.RegularExpressions;
-using Users.Core.Domain.Entities;
 using Users.Core.Domain.Entities.Base;
 using Users.Core.Domain.Entities.RabbitMQ;
 using Users.Core.Domain.Interfaces;
-using Users.Core.Domain.Interfaces.Publishers;
 using Users.Core.Entities.RabbitMq;
+
 
 namespace Users.Core.Application.UseCases.Users.PutUser
 {
-    public class PutUserUseCase
+    public class PutUserUseCase:IPutUserUseCase
     {
         private readonly IPutUserRepository _putUserRepository;
         private readonly ILogger<PutUserUseCase> _logger;
@@ -17,10 +20,15 @@ namespace Users.Core.Application.UseCases.Users.PutUser
         private readonly RabbitMqConfigurationSettings _rabbitMqConfigurationSettings;
         public PutUserUseCase(
             IPutUserRepository putUserRepository,
+            IPublisher publisher,
+            RabbitMqConfigurationSettings rabbitMqConfigurationSettings,
             ILogger<PutUserUseCase> logger
+
         )
         {
             _putUserRepository = putUserRepository;
+            _publisher = publisher;
+            _rabbitMqConfigurationSettings = rabbitMqConfigurationSettings;
             _logger = logger;
         }
 
@@ -48,7 +56,7 @@ namespace Users.Core.Application.UseCases.Users.PutUser
 
                 var message = new WelcomeCustomerMessage(input.Name, input.Login, input.Email);
 
-                _ = _publisher.Publish(message, _rabbitMqConfigurationSettings.GetQueueAdress());
+                await _publisher.Publish(message, _rabbitMqConfigurationSettings.GetQueueAdress());
 
                 PutUserOutPut outPut = new PutUserOutPut
                 {

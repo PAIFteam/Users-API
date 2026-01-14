@@ -1,28 +1,87 @@
-﻿using Users.Core.Domain.Interfaces.Publishers;
+﻿
+using Users.Core.Domain.Entities.RabbitMQ;
+using Users.Core.Domain.Interfaces;
 using Users.Infra.RabbitMq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using MassTransit;
+using MassTransit.MultiBus;
+using GreenPipes;
+using Microsoft.Extensions.DependencyInjection;
 
-
-namespace Users.Core.Application.Settings
+namespace Users.API.Extensions
 {
     public static class RabbitMqSettings
     {
-        public static IServiceCollection AddRabbitMqSettings(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddRabbitMq(this IServiceCollection services, IConfiguration configuration)
         {
-            var rabbitMqConfigurationsSettings = new Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings();
+            var rabbitSettings = new RabbitMqConfigurationSettings();
 
             configuration
-                .GetSection(Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings.OPTION_KEY)
-                .Bind(rabbitMqConfigurationsSettings);
+                .GetSection(RabbitMqConfigurationSettings.OPTION_KEY)
+                .Bind(rabbitSettings);
             services.AddScoped<IPublisher, Publisher>();
+            services.AddScoped(_ => rabbitSettings);
 
+            services.AddMassTransit<IBus>(_ =>
+            {
+                _.AddBus(context => Bus.Factory.CreateUsingRabbitMq(configure =>
+                {
+                    //var rabbitUri = new Uri($"ampq://{rabbitSettings.Username}:{rabbitSettings.Password}@{rabbitSettings.HostName}:5672");
+                    var rabbitUri = new  Uri($"rabbitmq://{rabbitSettings.Username}:{rabbitSettings.Password}@{rabbitSettings.HostName}:5672"); ///{rabbitSettings.QueueName}
+                    configure.Host(rabbitUri, h =>
+                    {
+                    });
 
-            services.Configure<Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings>(configuration.GetSection(Domain.Entities.RabbitMQ.RabbitMqConfigurationSettings.OPTION_KEY));
+                    //configure.Host("localhost", "/", h => // O primeiro parâmetro é o hostname, o segundo é o virtual host (padrão "/")
+                    //{
+                    //    h.Username("guest"); // Usuário padrão
+                    //    h.Password("guest"); // Senha padrão
+                    //});
+
+                    configure.Durable = true;
+                    //configure.UseCircuitBreaker(CorrelatedBy =>
+                    //{
+                    //    CorrelatedBy.TrackingPeriod = TimeSpan.FromMinutes(1);
+                    //    CorrelatedBy.TripThreshold = 15;
+                    //    CorrelatedBy.ActiveThreshold = 10;
+                    //    CorrelatedBy.ResetInterval = TimeSpan.FromMinutes(5);
+                    //});
+
+                    //configure.UseInMemoryScheduler(rabbitSettings.ScheduleQueueName);
+
+                    //configure.ReceiveEndpoint(rabbitSettings.QueueName, configureEndpoint =>
+                    //{
+                    //    var redeliveryIntervals = GetIntervals(rabbitSettings.RedeliveryInSeconds);
+                    //    var retryIntervals = GetIntervals(rabbitSettings.RetryInSeconds);
+
+                    //    if (!Equals(redeliveryIntervals, null) && redeliveryIntervals.Any())
+                    //    {
+                    //        configureEndpoint.UseScheduledRedelivery(r => r.Intervals(redeliveryIntervals));
+                    //    }
+
+                    //    if (!Equals(redeliveryIntervals, null) && retryIntervals.Any())
+                    //    {
+                    //        configureEndpoint.UseMessageRetry(r => r.Intervals(retryIntervals));
+
+                    //    }
+
+                    //});
+
+                    //configure.useHealthCheck(context);
+                }));
+            });
+
             return services;
+        }
+        private static TimeSpan[] GetIntervals(List<int> intervals)
+        {
+            if (Equals(intervals, null))
+            {
+                return new TimeSpan[0];
+            }
+
+            var nonZeroIntervals = intervals.Where(interval => !Equals(interval, 0));
+
+            return nonZeroIntervals.Select(interval => TimeSpan.FromSeconds(interval)).ToArray();
         }
     }
 }
