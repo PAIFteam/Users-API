@@ -14,7 +14,9 @@ namespace Users.Infra.RabbitMq
         }
         public async Task Publish<T>(T content, Uri queueAddress)
         {
-            var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(queueAddress);
+            //var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(queueAddress);
+            var sendEndpoint = await _sendEndpointProvider.GetSendEndpoint(new Uri("rabbitmq://localhost/welcome_customer_queue"));
+
             await sendEndpoint.Send(content);
         }
     }
