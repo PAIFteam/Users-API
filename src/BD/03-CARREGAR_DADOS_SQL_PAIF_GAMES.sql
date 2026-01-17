@@ -44,6 +44,20 @@ INSERT INTO [dbo].[type_game] VALUES (5,'Aventura')
 INSERT INTO [dbo].[type_game] VALUES (6,'Esportes ou Fantasia')
 INSERT INTO [dbo].[type_game] VALUES (7,'Battle Royale')
 
+
+INSERT INTO [dbo].[promotion] ([id_promotion],[name],[discount],[date_start],[date_end]) VALUES (1,'Inauguração',10,'2026-01-01','2026-03-30')
+INSERT INTO [dbo].[company] ([id_company],[name]) VALUES (1,'Atari')
+INSERT INTO [dbo].[games] ([id_game],[name], id_company, id_type_game, price) VALUES (1,'River Raid',1,1,50.89)
+INSERT INTO [dbo].[games] ([id_game],[name], id_company, id_type_game, price) VALUES (2,'Enduro',1,1,75.99)
+INSERT INTO [dbo].[games] ([id_game],[name], id_company, id_type_game, price) VALUES (3,'Pole Position',1,1,85.99)
+INSERT INTO [dbo].[games] ([id_game],[name], id_company, id_type_game, price) VALUES (4,'Pac-Man',1,1,24.89)
+
+
+GO
+
+
+
+
 GO
 
 
