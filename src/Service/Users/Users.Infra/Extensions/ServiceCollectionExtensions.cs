@@ -8,6 +8,7 @@ using System.Reflection;
 using Users.Core.Domain.Interfaces;
 using Users.Infra.Data.Repositories.Users;
 using Users.Core.Application.UseCases.Users.PutUser;
+using Users.Core.Application.UseCases.Users.GetUserById;
 
 namespace Users.Infra.Extensions
 {
@@ -35,6 +36,7 @@ namespace Users.Infra.Extensions
             //Registro dos UseCases
             services.AddScoped<GetUsersUseCase>();
             services.AddScoped<PutUserUseCase>();
+            services.AddScoped<GetUserByIdUseCase>();
 
             return services;
         }

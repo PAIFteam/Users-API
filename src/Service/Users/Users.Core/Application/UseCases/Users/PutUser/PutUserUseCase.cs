@@ -1,10 +1,11 @@
 ﻿
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using System.Text.RegularExpressions;
 using Users.Core.Domain.Entities.Base;
 using Users.Core.Domain.Entities.RabbitMQ;
 using Users.Core.Domain.Interfaces;
-using Users.Core.Entities.RabbitMq;
+using Users.Core.Domain.Security;
 
 
 namespace Users.Core.Application.UseCases.Users.PutUser
@@ -13,20 +14,17 @@ namespace Users.Core.Application.UseCases.Users.PutUser
     {
         private readonly IPutUserRepository _putUserRepository;
         private readonly ILogger<PutUserUseCase> _logger;
-        private readonly IPublisher _publisher;
-        private readonly RabbitMqConfigurationSettings _rabbitMqConfigurationSettings;
+        private readonly IConfiguration _configuration;
         public PutUserUseCase(
             IPutUserRepository putUserRepository,
-            IPublisher publisher,
-            RabbitMqConfigurationSettings rabbitMqConfigurationSettings,
-            ILogger<PutUserUseCase> logger
+            ILogger<PutUserUseCase> logger,
+            IConfiguration configuration
 
         )
         {
             _putUserRepository = putUserRepository;
-            _publisher = publisher;
-            _rabbitMqConfigurationSettings = rabbitMqConfigurationSettings;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public async Task<PutUserOutPut> ExecuteAsync(PutUserInput input)
@@ -49,23 +47,32 @@ namespace Users.Core.Application.UseCases.Users.PutUser
                     };
                 }
 
+                var globalSalt = _configuration["Security:PasswordSalt"];
+                if (string.IsNullOrWhiteSpace(globalSalt))
+                {
+                    return new PutUserOutPut
+                    {
+                        Result = false,
+                        Message = "Configuração de segurança inválida (PasswordSalt).",
+                        Exception = null
+                    };
+                }
+
+                input.Password = PasswordHasher.HashPassword(input.Password, globalSalt);
+
                 int idUser = await _putUserRepository.PutUserAsync(input.MapToUser());
-
-                var message = new WelcomeCustomerMessage(input.Name, input.Login, input.Email);
-
-                await _publisher.Publish(message, _rabbitMqConfigurationSettings.GetQueueAdress());
 
                 PutUserOutPut outPut = new PutUserOutPut
                 {
                     IdUser = idUser,
                     Name = input.Name,
                     Login = input.Login,
-                    Password = input.Password,
+                    Password = null,
                     Email = input.Email,
                     DateBirth = input.DateBirth,
                     IdProfile = input.IdProfile,
                     Result = true,
-                    Message = "User insert successfully",
+                    Message = "Usuário registrado com sucessso!",
                     Exception = null
 
                 };
@@ -99,10 +106,8 @@ namespace Users.Core.Application.UseCases.Users.PutUser
             }
             if (!IsValidPassword(input.Password))
             {
-                // Senha é inválida
-                // Email é inválido
                 outPut.Result = false;
-                outPut.Message = "Password com formato inválido";
+                outPut.Message = GetPasswordValidationMessage(input.Password);
                 return outPut;
             }
 
@@ -143,13 +148,38 @@ namespace Users.Core.Application.UseCases.Users.PutUser
                 return false;
 
             // Pelo menos uma letra maiúscula
-            bool hasUpper = password.Any(char.IsUpper);
+            bool hasUpper = password.Any(char.IsLetter);
             // Pelo menos um número
             bool hasDigit = password.Any(char.IsDigit);
             // Pelo menos dois caracteres especiais
             int specialCount = password.Count(c => !char.IsLetterOrDigit(c));
 
             return hasUpper && hasDigit && specialCount >= 2;
+        }
+
+        private string GetPasswordValidationMessage(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+                return "Password é obrigatório.";
+
+            var errors = new List<string>();
+
+            if (password.Length < 8)
+                errors.Add("deve ter no mínimo 8 caracteres");
+
+            if (!password.Any(char.IsLetter))
+                errors.Add("deve conter ao menos 1 letra");
+
+            if (!password.Any(char.IsDigit))
+                errors.Add("deve conter ao menos 1 número");
+
+            var specialCount = password.Count(c => !char.IsLetterOrDigit(c));
+            if (specialCount < 2)
+                errors.Add("deve conter ao menos 2 caracteres especiais");
+
+            return errors.Count == 0
+                ? "Password com formato inválido."
+                : $"Password inválido: {string.Join(", ", errors)}.";
         }
         private bool IsEmailExistente(string email)
         {

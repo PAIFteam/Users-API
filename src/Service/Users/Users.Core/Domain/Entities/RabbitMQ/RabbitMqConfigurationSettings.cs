@@ -17,7 +17,6 @@ namespace Users.Core.Domain.Entities.RabbitMQ
         public List<int> RedeliveryInSeconds { get; set; }
         public List<int> RetryInSeconds { get; set; }
         public string QueueName { get; set; }
-        public string ScheduleQueueName { get; set; }
         public bool StartConsumer { get; set; } = false;
 
         //rabbitmq://[usuário:senha@]host[:porta]/[vhost/][nome-da-fila-ou-exchange]

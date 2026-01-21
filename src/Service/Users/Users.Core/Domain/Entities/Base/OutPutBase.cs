@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Text.Json.Serialization;
 
 namespace Users.Core.Domain.Entities.Base
 {
@@ -11,7 +12,9 @@ namespace Users.Core.Domain.Entities.Base
         
         public bool Result { get; set; }
         public string Message { get; set; }
-        public Exception Exception { get; set; }
+
+        [JsonIgnore]
+        public Exception? Exception { get; set; }
 
 
     }

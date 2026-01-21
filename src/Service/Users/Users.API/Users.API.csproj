@@ -5,9 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>6b1acf1f-8449-47b1-ae07-3a004b7b3ac0</UserSecretsId>
-    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <DockerfileContext>..\..\..</DockerfileContext>
-    <DockerComposeProjectPath>..\..\..\docker-compose.dcproj</DockerComposeProjectPath>
     <OutputType>Exe</OutputType>
   </PropertyGroup>
 
@@ -26,16 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="Dockerfile" />
-    <None Remove="Dockerfile.original" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="MassTransit.AspNetCore" Version="7.0.7" />
     <PackageReference Include="MassTransit.Azure.ServiceBus.Core" Version="7.0.7" />
     <PackageReference Include="MassTransit.Quartz" Version="7.0.7" />
     <PackageReference Include="MassTransit.RabbitMQ" Version="7.0.7" />
-    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.0" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    <PackageReference Include="Microsoft.OpenApi" Version="1.6.22" />
   </ItemGroup>
 
   <ItemGroup>
