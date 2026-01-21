@@ -1,7 +1,7 @@
 # Users API
 
-Microsserviço responsável pela **gestão de usuários** da plataforma **PAIF Games**.  
-Este serviço realiza o **CRUD completo de usuários**, autenticação simples (demo) e **publica eventos via RabbitMQ**, integrando-se a outros microsserviços em uma arquitetura **orientada a eventos**.
+Microsserviço responsável pela **gestão de usuários** da plataforma PAIF Games,
+projetado para atuar como **publisher de eventos** em uma arquitetura orientada a eventos.
 
 ---
 
@@ -24,6 +24,14 @@ Arquitetura em camadas:
 - Infra (Data + Messaging)
 
 ---
+
+## 🧠 Design Decisions
+
+- CQRS adotado para separar leitura e escrita
+- Dapper utilizado por performance e controle de SQL
+- RabbitMQ usado para desacoplamento entre domínios
+- Serviço atua apenas como publisher por design
+
 
 ## 📦 Responsabilidades do Serviço
 
@@ -137,3 +145,6 @@ docker run -p 8080:8080 \
   -e ASPNETCORE_URLS=http://+:8080 \
   users-api
 ```
+
+## 📄 Licença
+Projeto para fins educacionais e demonstrativos.
