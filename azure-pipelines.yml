@@ -7,19 +7,19 @@ resources:
   repositories:
     - repository: platforminfra
       type: git
-      name: https://github.com/PAIFteam/Platform-INFRA
+      name: PAIFteam/Platform-INFRA
     - repository: usersapi
       type: git
-      name: https://github.com/PAIFteam/Users-API
+      name: PAIFteam/Users-API
     - repository: notificationsapi
       type: git
-      name: https://github.com/PAIFteam/Notifications-API
+      name: PAIFteam/Notifications-API
     - repository: catalogapi
       type: git
-      name: https://github.com/PAIFteam/Catalog-API
+      name: PAIFteam/Catalog-API
     - repository: paymentsapi
       type: git
-      name: https://github.com/PAIFteam/Payments-API
+      name: PAIFteam/Payments-API
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
