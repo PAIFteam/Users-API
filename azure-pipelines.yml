@@ -57,17 +57,17 @@ stages:
           - checkout: platforminfra
             path: platform-infra
           - script: |
-              echo "=== Listando arquivos do repositório users-api ==="
-              echo "Caminho: $(Build.SourcesDirectory)/s/users-api"
-              if [ -d "$(Build.SourcesDirectory)/s/users-api" ]; then
-                ls -la "$(Build.SourcesDirectory)/s/users-api"
+              echo "=== Listando arquivos do repositório ==="
+              echo "Caminho: $(Build.SourcesDirectory)"
+              if [ -d "$(Build.SourcesDirectory)" ]; then
+                ls -la "$(Build.SourcesDirectory)"
                 echo "=== Listagem recursiva ==="
-                ls -laR "$(Build.SourcesDirectory)/s/users-api"
+                ls -laR "$(Build.SourcesDirectory)"
               else
-                echo "Diretório users-api não encontrado em $(Build.SourcesDirectory)"
+                echo "Diretório  não encontrado em $(Build.SourcesDirectory)"
                 exit 1
               fi
-            displayName: 'Listar arquivos users-api'
+            displayName: 'Listar arquivos'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
