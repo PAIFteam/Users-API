@@ -132,40 +132,16 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                set -e
-                RG="$(vmResourceGroup)"
-                CLUSTER="$(aksClusterName)"
-                ACR="$(acrName)"
-                LOCATION="centralus"
-                ZONE="1"
-                SIZE="Standard_D4s_v3"
-
-                echo "Resource group: $RG"
-                echo "Location: $LOCATION, Zone: $ZONE, Node size: $SIZE"
-
-                # cria resource group do cluster se necessário
-                az group create --name "$RG" --location "$LOCATION" || true
-
-                # cria AKS somente se não existir
-                if ! az aks show -g "$RG" -n "$CLUSTER" >/dev/null 2>&1; then
-                  echo "Criando AKS $CLUSTER em $RG"
-                  az aks create \
-                    --resource-group "$RG" \
-                    --name "$CLUSTER" \
-                    --location "$LOCATION" \
-                    --zones "$ZONE" \
-                    --node-count 1 \
-                    --node-vm-size "$SIZE" \
-                    --enable-managed-identity \
-                    --attach-acr "$ACR" \
-                    --generate-ssh-keys
-                else
-                  echo "AKS $CLUSTER já existe em $RG"
-                fi
-
-                echo "Obtendo credenciais do cluster"
-                az aks get-credentials --resource-group "$RG" --name "$CLUSTER" --overwrite-existing
-                kubectl get nodes -o wide || true
+                set -e 
+                az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1 ||
+                az aks create -g $(resourceGroup) -n $(aksClusterName)
+                --node-count 1
+                --node-vm-size Standard_DC2s_v3
+                --generate-ssh-keys
+                --enable-managed-identity
+                --attach-acr $(acrName)
+                --location $(location)
+                --max-surge 0 az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
 
   - stage: Deploy
     displayName: 'Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
