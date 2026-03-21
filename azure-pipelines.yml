@@ -47,7 +47,7 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - checkout: usersapi
-            path: users-api
+            path: '$(Agent.BuildDirectory)/s/users-api'
           - checkout: notificationsapi
             path: notifications-api
           - checkout: catalogapi
@@ -56,15 +56,6 @@ stages:
             path: payments-api
           - checkout: platforminfra
             path: platform-infra
-          - script: |
-              echo "=== Ajustando imageTag: removendo '/s' final de $(Build.SourcesDirectory) ==="
-              SRC_DIR="$(Build.SourcesDirectory)"
-              # remove o sufixo "/s" se existir
-              CLEANED="${SRC_DIR%/s}"
-              echo "Diretório original: $SRC_DIR"
-              echo "Diretório sem /s: $CLEANED"
-              echo "##vso[task.setvariable variable=imageTag]$CLEANED"
-            displayName: 'Remover /s de imageTag'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
