@@ -6,19 +6,19 @@ trigger:
 resources:
   repositories:
     - repository: platforminfra
-      type: git
+      type: github
       name: PAIFteam/Platform-INFRA
     - repository: usersapi
-      type: git
+      type: github
       name: PAIFteam/Users-API
     - repository: notificationsapi
-      type: git
+      type: github
       name: PAIFteam/Notifications-API
     - repository: catalogapi
-      type: git
+      type: github
       name: PAIFteam/Catalog-API
     - repository: paymentsapi
-      type: git
+      type: github
       name: PAIFteam/Payments-API
 
 variables:
