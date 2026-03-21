@@ -134,11 +134,6 @@ stages:
                 set -e
                 az group create --name $(resourceGroup) --location $(location)
 
-                # cria ACR se não existir
-                if ! az acr show -n $(acrName) -g $(resourceGroup) >/dev/null 2>&1; then
-                  az acr create -n $(acrName) -g $(resourceGroup) --sku Basic --admin-enabled true
-                fi
-
                 # cria AKS simples se não existir e vincula ao ACR
                 if ! az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1; then
                   az aks create -g $(resourceGroup) -n $(aksClusterName) \
