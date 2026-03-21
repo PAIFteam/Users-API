@@ -56,14 +56,13 @@ stages:
             path: payments-api
           - checkout: platforminfra
             path: platform-infra
+          # inserir dentro do job `Build`, após os passos de `checkout`
           - script: |
               echo "=== Listando apenas diretórios em $(Build.SourcesDirectory) ==="
               SRC_DIR="$(Build.SourcesDirectory)"
               if [ -d "$SRC_DIR" ]; then
-                # lista somente diretórios de primeiro nível (não recursivo), imprime apenas o nome
-                find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -print0 \
-                  | xargs -0 -n1 basename \
-                  | sort
+                # lista somente diretórios de primeiro nível e imprime apenas o nome
+                find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
               else
                 echo "Diretório não encontrado: $SRC_DIR"
                 exit 1
