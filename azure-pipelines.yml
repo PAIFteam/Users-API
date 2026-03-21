@@ -36,7 +36,7 @@ variables:
   aksClusterName: 'k8spaifgames'
   kubernetesNamespace: 'paifgames-ns'
   dotnetVersion: '8.0.x'
-  imageTag: '$(Build.BuildId)'
+  imageTag: '$(Agent.BuildDirectory)'
 
 stages:
   - stage: BuildAndPush
@@ -47,7 +47,7 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - checkout: usersapi
-            path: '$(Agent.BuildDirectory)/s/users-api'
+            path: '$(Agent.BuildDirectory)/users-api'
           - checkout: notificationsapi
             path: notifications-api
           - checkout: catalogapi
