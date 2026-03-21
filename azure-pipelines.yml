@@ -138,7 +138,7 @@ stages:
                 if ! az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1; then 
                   az aks create -g $(resourceGroup) -n $(aksClusterName)
                     --node-count 1
-                    --node-vm-size B2ats_v2
+                    --node-vm-size standard_m64
                     --generate-ssh-keys
                     --enable-managed-identity
                     --attach-acr $(acrName) 
