@@ -56,7 +56,18 @@ stages:
             path: catalog-api
           - checkout: paymentsapi
             path: payments-api
-
+          - script: |
+              echo "=== Listando arquivos do repositório users-api ==="
+              echo "Caminho: $(Build.SourcesDirectory)/users-api"
+              if [ -d "$(Build.SourcesDirectory)/users-api" ]; then
+                ls -la "$(Build.SourcesDirectory)/users-api"
+                echo "=== Listagem recursiva ==="
+                ls -laR "$(Build.SourcesDirectory)/users-api"
+              else
+                echo "Diretório users-api não encontrado em $(Build.SourcesDirectory)"
+                exit 1
+              fi
+            displayName: 'Listar arquivos users-api'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
@@ -67,6 +78,7 @@ stages:
             inputs:
               containerRegistry: $(acrServiceConnection) 
               command: 'login'
+          
           # Ajuste os caminhos dos Dockerfiles conforme a estrutura real de cada repositório.
           - task: Docker@2
             displayName: 'Build & Push Users API'
