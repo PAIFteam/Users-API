@@ -145,7 +145,7 @@ stages:
                   --resource-group "$RG" \
                   --name "$CLUSTER" \
                   --node-count 1 \
-                  --node-vm-size Standard_D2s_v3 \
+                  --node-vm-size Standard_DC2s_v3 \
                   --generate-ssh-keys \
                   --enable-managed-identity \
                   --attach-acr "$ACR"
