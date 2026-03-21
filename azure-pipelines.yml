@@ -74,7 +74,7 @@ stages:
               containerRegistry: $(acrServiceConnection)
               repository: '$(acrLoginServer)/users-api'
               command: 'build'
-              dockerfile: 'src/Dockerfile'
+              dockerfile: '**/Dockerfile'
               buildContext: 'users-api'
               tags: |
                 $(imageTag)
