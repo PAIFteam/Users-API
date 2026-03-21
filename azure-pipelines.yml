@@ -5,11 +5,7 @@ trigger:
 
 resources:
   repositories:
-    - repository: platforminfra
-      type: git
-      name: YourProject/Platform-INFRA
-      endpoint: PaifGames
-    - repository: usersapi
+     - repository: usersapi
       type: github
       name: PAIFteam/Users-API
       endpoint: PaifGames
