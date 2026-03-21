@@ -8,23 +8,23 @@ resources:
     - repository: platforminfra
       type: git
       name: YourProject/Platform-INFRA
-      endpoint: PaifGames
+      endpoint: PAIFteam
     - repository: usersapi
       type: github
       name: PAIFteam/Users-API
-      endpoint: PaifGames
+      endpoint: PAIFteam
     - repository: notificationsapi
       type: github
       name: PAIFteam/Notifications-API
-      endpoint: PaifGames
+      endpoint: PAIFteam
     - repository: catalogapi
       type: github
       name: PAIFteam/Catalog-API
-      endpoint: PaifGames
+      endpoint: PAIFteam
     - repository: paymentsapi
       type: github
       name: PAIFteam/Payments-API
-      endpoint: PaifGames
+      endpoint: PAIFteam
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
