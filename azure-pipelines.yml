@@ -28,9 +28,9 @@ resources:
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
-  acrServiceConnection: 'k8spaifgames'   # Service connection ACR (usado pelo Docker task)
-  acrName: 'k8spaifgames'                                 # nome do ACR (sem .azurecr.io)
-  acrLoginServer: 'k8spaifgames.azurecr.io'               # ex: youracr.azurecr.io
+  acrServiceConnection: 'dockerpaifgames'   # Service connection ACR (usado pelo Docker task)
+  acrName: 'acrpaifgames'                                 # nome do ACR (sem .azurecr.io)
+  acrLoginServer: 'acrpaifgames.azurecr.io'               # ex: youracr.azurecr.io
   resourceGroup: 'rg-paifgames'
   location: 'eastus'
   aksClusterName: 'k8spaifgames'
