@@ -1,5 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src/users-api
+WORKDIR /src
 
 RUN dotnet restore users-api.sln
 
