@@ -5,18 +5,26 @@ trigger:
 
 resources:
   repositories:
+    - repository: platforminfra
+      type: git
+      name: YourProject/Platform-INFRA
+      endpoint: PaifGames
     - repository: usersapi
       type: github
       name: PAIFteam/Users-API
+      endpoint: PaifGames
     - repository: notificationsapi
       type: github
       name: PAIFteam/Notifications-API
+      endpoint: PaifGames
     - repository: catalogapi
       type: github
       name: PAIFteam/Catalog-API
+      endpoint: PaifGames
     - repository: paymentsapi
       type: github
       name: PAIFteam/Payments-API
+      endpoint: PaifGames
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
