@@ -118,147 +118,131 @@ stages:
                 latest
 
   - stage: CreateAKS
-    displayName: 'Criar AKS (k8spaifgames) em vmpaifgames'
+    displayName: 'Criar AKS (k8spaifgames)'
     dependsOn: BuildAndPush
     jobs:
-    - job: Create
-      pool:
-        vmImage: 'ubuntu-latest'
-      steps:
-        - task: AzureCLI@2
-          displayName: 'Criar/Configurar AKS no resource group existente (vmpaifgames)'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: 'bash'
-            scriptLocation: 'inlineScript'
-            inlineScript: |
-              set -e
-              RG="$(vmResourceGroup)"
-              CLUSTER="$(aksClusterName)"
-              ACR="$(acrName)"
-
-              echo "Usando resource group existente: $RG"
-              # cria cluster apenas se não existir
-              if ! az aks show -g "$RG" -n "$CLUSTER" >/dev/null 2>&1; then
-                echo "Criando AKS $CLUSTER no RG $RG"
-                az aks create \
-                  --resource-group "$RG" \
-                  --name "$CLUSTER" \
-                  --node-count 1 \
-                  --node-vm-size Standard_DC2s_v3 \
-                  --generate-ssh-keys \
-                  --enable-managed-identity \
-                  --attach-acr "$ACR"
-              else
-                echo "AKS $CLUSTER já existe em $RG"
-              fi
-
-              echo "Obtendo credenciais do cluster"
-              az aks get-credentials --resource-group "$RG" --name "$CLUSTER" --overwrite-existing
-              kubectl get nodes --no-headers
+      - job: CreateCluster
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: AzureCLI@2
+            displayName: 'Criar/Configurar AKS no resource group rg-paifgames'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                echo "Resource group: $(resourceGroup)"
+                if ! az aks show -g $(resourceGroup) -n $(aksClusterName) >/dev/null 2>&1; then
+                  echo "Criando AKS $(aksClusterName) em $(resourceGroup)"
+                  az aks create -g $(resourceGroup) -n $(aksClusterName) \
+                    --node-count 1 \
+                    --enable-managed-identity \
+                    --generate-ssh-keys \
+                    --attach-acr $(acrName)
+                else
+                  echo "AKS $(aksClusterName) já existe em $(resourceGroup)"
+                fi
+                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
+                kubectl get nodes -o wide
 
   - stage: Deploy
-    displayName: 'Deploy das imagens (A partir do ACR) e docker-compose -> k8s'
+    displayName: 'Deploy imagens e infra no AKS'
     dependsOn: CreateAKS
     jobs:
       - job: DeployToAKS
         pool:
           vmImage: 'ubuntu-latest'
         steps:
+          - checkout: usersapi
+            path: 's/users-api'
+          - checkout: notificationsapi
+            path: 's/notifications-api'
+          - checkout: catalogapi
+            path: 's/catalog-api'
+          - checkout: paymentsapi
+            path: 's/payments-api'
           - checkout: platforminfra
             path: 's/platform-infra'
 
           - task: AzureCLI@2
-            displayName: 'Login ACR e preparar cluster'
+            displayName: 'Configurar kubectl e login no ACR'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                RG="$(vmResourceGroup)"
-                CLUSTER="$(aksClusterName)"
-                ACR_NAME="$(acrName)"
-                ACR_LOGIN="$(acrLoginServer)"
-                NAMESPACE="$(kubernetesNamespace)"
-
-                az aks get-credentials -g "$RG" -n "$CLUSTER" --overwrite-existing
-
-                # login no ACR (necessário para pull das imagens)
-                az acr login -n "$ACR_NAME"
-
-                kubectl create namespace "$NAMESPACE" || true
-                kubectl config set-context --current --namespace="$NAMESPACE"
+                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
+                az acr login -n $(acrName) || true
+                kubectl create namespace $(kubernetesNamespace) || true
+                kubectl config set-context --current --namespace=$(kubernetesNamespace)
 
           - task: AzureCLI@2
-            displayName: 'Converter docker-compose (Platform-INFRA) para manifests e aplicar'
+            displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                COMPOSE_PATH="$(Build.SourcesDirectory)/platform-infra/docker-compose.yml"
-                ACR="$(acrLoginServer)"
-                TAG="$(imageTag)"
-                NAMESPACE="$(kubernetesNamespace)"
-
-                if [ ! -f "$COMPOSE_PATH" ]; then
-                  echo "docker-compose.yml não encontrado: $COMPOSE_PATH"
+                COMPOSE="$(Build.SourcesDirectory)/s/platform-infra/docker-compose.yml"
+                if [ ! -f "$COMPOSE" ]; then
+                  echo "docker-compose.yml não encontrado: $COMPOSE"
                   exit 1
                 fi
-
-                # garante kompose
                 if ! command -v kompose >/dev/null 2>&1; then
                   curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
                   chmod +x kompose
                   sudo mv kompose /usr/local/bin/kompose
                 fi
-
-                # altera imagens do compose para apontar ao ACR e tag do build
+                ACR="$(acrLoginServer)"
+                TAG="$(Build.BuildId)"
                 tmpfile=$(mktemp)
                 awk -v acr="$ACR" -v tag="$TAG" '
                   /^([[:space:]]*)image:/ {
                     indent=substr($0,1,match($0,/image:/)-1)
                     sub(/^[[:space:]]*image:[[:space:]]*/,"")
-                    svc=$0
+                    img=$0
                     gsub(/[ \t\r\n]+$/,"")
-                    # pega nome final do serviço (remove registry/namespace)
-                    split(svc,a,":")
+                    split(img,a,":")
                     name=a[1]
-                    n=name
-                    if (index(n,"/")>0) {
-                      split(n,parts,"/")
-                      n=parts[length(parts)]
-                    }
-                    print indent "image: " acr "/" n ":" tag
+                    if (index(name,"/")>0) { split(name,parts,"/"); name=parts[length(parts)]; }
+                    print indent "image: " acr "/" name ":" tag
                     next
                   }
                   { print $0 }
-                ' "$COMPOSE_PATH" > "$tmpfile" && mv "$tmpfile" "$COMPOSE_PATH"
-
+                ' "$COMPOSE" > "$tmpfile" && mv "$tmpfile" "$COMPOSE"
                 mkdir -p k8s-manifests
-                kompose -f "$COMPOSE_PATH" convert -o k8s-manifests || kompose convert -f "$COMPOSE_PATH" -o k8s-manifests
-
-                kubectl apply -n "$NAMESPACE" -f k8s-manifests
-
-                # aplica manifests k8s específicos por repositório se existirem (usar paths relativos do checkout do Build)
+                kompose -f "$COMPOSE" convert -o k8s-manifests
+                kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
+                # aplica manifests k8s específicos de cada repo, se existirem
                 for repo in users-api notifications-api catalog-api payments-api; do
-                  REPO_PATH="$(Build.SourcesDirectory)/s/${repo}"
-                  if [ -d "$REPO_PATH/k8s" ]; then
-                    kubectl apply -n "$NAMESPACE" -f "$REPO_PATH/k8s" || true
+                  if [ -d "$(Build.SourcesDirectory)/s/$repo/k8s" ]; then
+                    kubectl apply -n $(kubernetesNamespace) -f "$(Build.SourcesDirectory)/s/$repo/k8s" || true
                   fi
                 done
-
-                kubectl rollout status -n "$NAMESPACE" deployment --timeout=10m || true
+                kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
 
           - task: AzureCLI@2
-            displayName: 'Verificações finais e status'
+            displayName: 'Verificações finais'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                set -e
-                NAMESPACE="$(kubernetesNamespace)"
-                kubectl get pods,svc -n "$NAMESPACE" -o wide
+                kubectl get pods,svc -n $(kubernetesNamespace) -o wide
+
+  - stage: CleanupOnFailure
+    displayName: 'Cleanup (apenas em falha)'
+    condition: failed()
+    jobs:
+      - job: Cleanup
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - script: |
+              echo "Pipeline falhou. Para remover o cluster execute:"
+              echo "az aks delete --resource-group $(resourceGroup) --name $(aksClusterName) --yes --no-wait"
+            displayName: 'Instruções de cleanup'
