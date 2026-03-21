@@ -16,7 +16,7 @@ RUN dotnet restore "src/users-api.sln"
 RUN dotnet build "src/users-api.sln" -c Release -o /app/build
 
 # Publica o projeto web (ajuste o caminho do csproj se necessário)
-RUN dotnet publish "src/src/Service/Users/Users.API/Users.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
+RUN dotnet publish "src/Service/Users/Users.API/Users.API.csproj" -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
 WORKDIR /app
