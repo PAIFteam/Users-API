@@ -77,7 +77,7 @@ stages:
               dockerfile: '../users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
-                $(imageTag)
+                '$(imageTag)/users-api'
                 latest
 
           - task: Docker@2
