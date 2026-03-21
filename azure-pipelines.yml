@@ -72,7 +72,7 @@ stages:
             displayName: 'Build & Push Users API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/users-api'
+              repository: 'usersapi'
               command: 'build'
               dockerfile: '**/Dockerfile'
               buildContext: 'users-api'
