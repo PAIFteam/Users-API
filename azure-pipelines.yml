@@ -49,13 +49,13 @@ stages:
           - checkout: usersapi
             path: 's/users-api'
           - checkout: notificationsapi
-            path: notifications-api
+            path: 's/notifications-api'
           - checkout: catalogapi
-            path: catalog-api
+            path: 's/catalog-api'
           - checkout: paymentsapi
-            path: payments-api
+            path: 's/payments-api'
           - checkout: platforminfra
-            path: platform-infra
+            path: 's/platform-infra'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
