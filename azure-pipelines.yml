@@ -58,8 +58,8 @@ stages:
             path: platform-infra
           # inserir dentro do job `Build`, após os passos de `checkout`
           - script: |
-              echo "=== Listando apenas diretórios em $(Build.SourcesDirectory) ==="
-              SRC_DIR="$(Build.SourcesDirectory)"
+              echo "=== Listando apenas diretórios em $(Build.DefaultWorkingDirectory) ==="
+              SRC_DIR="$(Build.DefaultWorkingDirectory)"
               if [ -d "$SRC_DIR" ]; then
                 # lista somente diretórios de primeiro nível e imprime apenas o nome
                 find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
@@ -67,7 +67,7 @@ stages:
                 echo "Diretório não encontrado: $SRC_DIR"
                 exit 1
               fi
-            displayName: 'Listar diretórios - $(Build.SourcesDirectory)'
+            displayName: 'Listar diretórios - $(Build.DefaultWorkingDirectory)'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
