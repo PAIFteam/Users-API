@@ -1,6 +1,5 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
-
+WORKDIR /src/users-api
 
 RUN dotnet restore
 
