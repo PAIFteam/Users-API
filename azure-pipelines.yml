@@ -116,30 +116,40 @@ stages:
                 $(imageTag)
                 latest
 
-  - stage: DeployToVM 
-    displayName: 'Deploy na VM vmpaifgames' 
-    dependsOn: BuildAndPush 
+  - stage: CreateAKS
+    displayName: 'Criar AKS (k8spaifgames)'
+    dependsOn: BuildAndPush
     jobs:
-      - job: Deploy
+      - job: Create
         pool:
           vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2 
-            displayName: 'Criar RG e ACR (se necessário)' 
+            displayName: 'Criar RG, ACR (se necessário) e AKS básico' 
             inputs: 
-              azureSubscription: $(azureSubscription)
-              scriptType: 'bash'
-              scriptLocation: 'inlineScript'
+              azureSubscription: $(azureSubscription) 
+              scriptType: 'bash' 
+              scriptLocation: 'inlineScript' 
               inlineScript: | 
                 set -e 
                 az group create --name $(resourceGroup) --location $(location) 
-                az acr show -n $(acrName) -g $(resourceGroup) >/dev/null 2>&1 || 
-                az acr create -n $(acrName) -g $(resourceGroup) --sku Basic
+              
+                # cria AKS simples se não existir e vincula ao ACR 
+                if ! az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1; then 
+                  az aks create -g $(resourceGroup) -n $(aksClusterName)
+                    --node-count 1
+                    --node-vm-size standard_m64
+                    --generate-ssh-keys
+                    --enable-managed-identity
+                    --attach-acr $(acrName) 
+                fi 
+                
+                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing 
+                kubectl get nodes || true
 
-  
   - stage: Deploy
     displayName: 'Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
-    dependsOn: DeployToVM
+    dependsOn: CreateAKS
     jobs:
       - job: DeployToAKS
         pool:
