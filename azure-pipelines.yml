@@ -47,7 +47,7 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - checkout: usersapi
-            path: '$(Agent.BuildDirectory)/users-api'
+            path: 'users-api'
           - checkout: notificationsapi
             path: notifications-api
           - checkout: catalogapi
