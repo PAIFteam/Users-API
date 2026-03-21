@@ -137,7 +137,7 @@ stages:
                 CLUSTER="$(aksClusterName)"
                 ACR="$(acrName)"
                 LOCATION="$(location)"
-                ZONE="$(zone)"
+                ZONE="centralus"
                 SIZE="$(nodeVmSize)"
 
                 echo "Resource group: $RG"
