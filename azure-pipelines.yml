@@ -46,7 +46,6 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
-          - checkout: self
           - checkout: platforminfra
             path: platform-infra
           - checkout: usersapi
@@ -63,14 +62,18 @@ stages:
             inputs:
               packageType: 'sdk'
               version: $(dotnetVersion)
-
+          - task: Docker@2
+            displayName: 'Login into Registry $(acrServiceConnection)' 
+            inputs:
+              containerRegistry: $(acrServiceConnection) 
+              command: 'login'
           # Ajuste os caminhos dos Dockerfiles conforme a estrutura real de cada repositório.
           - task: Docker@2
             displayName: 'Build & Push Users API'
             inputs:
               containerRegistry: $(acrServiceConnection)
               repository: '$(acrLoginServer)/users-api'
-              command: 'buildAndPush'
+              command: 'build'
               dockerfile: 'src/Dockerfile'
               buildContext: 'users-api'
               tags: |
