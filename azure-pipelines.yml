@@ -118,51 +118,63 @@ stages:
                 latest
 
   - stage: CreateAKS
-    displayName: 'Criar AKS (k8spaifgames)'
+    displayName: 'Criar AKS (k8spaifgames) em vmpaifgames (Central US - Zona 1)'
     dependsOn: BuildAndPush
     jobs:
-      - job: CreateCluster
+      - job: Create
         pool:
           vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2
-            displayName: 'Criar/Configurar AKS no resource group rg-paifgames'
+            displayName: 'Criar/Configurar AKS no resource group vmpaifgames'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                echo "Resource group: $(resourceGroup)"
-                if ! az aks show -g $(resourceGroup) -n $(aksClusterName) >/dev/null 2>&1; then
-                  echo "Criando AKS $(aksClusterName) em $(resourceGroup)"
-                  az aks create -g $(resourceGroup) -n $(aksClusterName) \
+                RG="$(vmResourceGroup)"
+                CLUSTER="$(aksClusterName)"
+                ACR="$(acrName)"
+                LOCATION="$(location)"
+                ZONE="$(zone)"
+                SIZE="$(nodeVmSize)"
+
+                echo "Resource group: $RG"
+                echo "Location: $LOCATION, Zone: $ZONE, Node size: $SIZE"
+
+                # cria resource group do cluster se necessário
+                az group create --name "$RG" --location "$LOCATION" || true
+
+                # cria AKS somente se não existir
+                if ! az aks show -g "$RG" -n "$CLUSTER" >/dev/null 2>&1; then
+                  echo "Criando AKS $CLUSTER em $RG"
+                  az aks create \
+                    --resource-group "$RG" \
+                    --name "$CLUSTER" \
+                    --location "$LOCATION" \
+                    --zones "$ZONE" \
                     --node-count 1 \
+                    --node-vm-size "$SIZE" \
                     --enable-managed-identity \
-                    --generate-ssh-keys \
-                    --attach-acr $(acrName)
+                    --attach-acr "$ACR" \
+                    --generate-ssh-keys
                 else
-                  echo "AKS $(aksClusterName) já existe em $(resourceGroup)"
+                  echo "AKS $CLUSTER já existe em $RG"
                 fi
-                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
-                kubectl get nodes -o wide
+
+                echo "Obtendo credenciais do cluster"
+                az aks get-credentials --resource-group "$RG" --name "$CLUSTER" --overwrite-existing
+                kubectl get nodes -o wide || true
 
   - stage: Deploy
-    displayName: 'Deploy imagens e infra no AKS'
+    displayName: 'Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
     dependsOn: CreateAKS
     jobs:
       - job: DeployToAKS
         pool:
           vmImage: 'ubuntu-latest'
         steps:
-          - checkout: usersapi
-            path: 's/users-api'
-          - checkout: notificationsapi
-            path: 's/notifications-api'
-          - checkout: catalogapi
-            path: 's/catalog-api'
-          - checkout: paymentsapi
-            path: 's/payments-api'
           - checkout: platforminfra
             path: 's/platform-infra'
 
@@ -174,10 +186,18 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
-                az acr login -n $(acrName) || true
-                kubectl create namespace $(kubernetesNamespace) || true
-                kubectl config set-context --current --namespace=$(kubernetesNamespace)
+                RG="$(vmResourceGroup)"
+                CLUSTER="$(aksClusterName)"
+                ACR_NAME="$(acrName)"
+                NAMESPACE="$(kubernetesNamespace)"
+
+                az aks get-credentials -g "$RG" -n "$CLUSTER" --overwrite-existing
+
+                # login no ACR para operações locais (AKS com --attach-acr já tem permissão)
+                az acr login -n "$ACR_NAME" || true
+
+                kubectl create namespace "$NAMESPACE" || true
+                kubectl config set-context --current --namespace="$NAMESPACE"
 
           - task: AzureCLI@2
             displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
@@ -192,14 +212,19 @@ stages:
                   echo "docker-compose.yml não encontrado: $COMPOSE"
                   exit 1
                 fi
+
+                # instala kompose se necessário
                 if ! command -v kompose >/dev/null 2>&1; then
                   curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
                   chmod +x kompose
                   sudo mv kompose /usr/local/bin/kompose
                 fi
+
                 ACR="$(acrLoginServer)"
-                TAG="$(Build.BuildId)"
+                TAG="$(imageTag)"
                 tmpfile=$(mktemp)
+
+                # ajusta imagens do compose para apontar ao ACR com a tag do build
                 awk -v acr="$ACR" -v tag="$TAG" '
                   /^([[:space:]]*)image:/ {
                     indent=substr($0,1,match($0,/image:/)-1)
@@ -214,15 +239,20 @@ stages:
                   }
                   { print $0 }
                 ' "$COMPOSE" > "$tmpfile" && mv "$tmpfile" "$COMPOSE"
+
                 mkdir -p k8s-manifests
                 kompose -f "$COMPOSE" convert -o k8s-manifests
+
                 kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
-                # aplica manifests k8s específicos de cada repo, se existirem
+
+                # aplica manifests k8s específicos por repositório (se existirem)
                 for repo in users-api notifications-api catalog-api payments-api; do
-                  if [ -d "$(Build.SourcesDirectory)/s/$repo/k8s" ]; then
-                    kubectl apply -n $(kubernetesNamespace) -f "$(Build.SourcesDirectory)/s/$repo/k8s" || true
+                  REPO_K8S="$(Build.SourcesDirectory)/s/$repo/k8s"
+                  if [ -d "$REPO_K8S" ]; then
+                    kubectl apply -n $(kubernetesNamespace) -f "$REPO_K8S" || true
                   fi
                 done
+
                 kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
 
           - task: AzureCLI@2
@@ -232,7 +262,12 @@ stages:
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
+                set -e
                 kubectl get pods,svc -n $(kubernetesNamespace) -o wide
+                echo "Logs SQL Server (se existir):"
+                kubectl logs -n $(kubernetesNamespace) -l app=sqlserver --tail=50 || true
+                echo "Logs RabbitMQ (se existir):"
+                kubectl logs -n $(kubernetesNamespace) -l app=rabbitmq --tail=50 || true
 
   - stage: CleanupOnFailure
     displayName: 'Cleanup (apenas em falha)'
@@ -243,6 +278,6 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - script: |
-              echo "Pipeline falhou. Para remover o cluster execute:"
-              echo "az aks delete --resource-group $(resourceGroup) --name $(aksClusterName) --yes --no-wait"
+              echo "Pipeline falhou. Para remover o AKS execute:"
+              echo "az aks delete --resource-group $(vmResourceGroup) --name $(aksClusterName) --yes --no-wait"
             displayName: 'Instruções de cleanup'
