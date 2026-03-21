@@ -57,17 +57,18 @@ stages:
           - checkout: platforminfra
             path: platform-infra
           - script: |
-              echo "=== Listando arquivos do repositório ==="
-              echo "Caminho: $(Build.SourcesDirectory)"
-              if [ -d "$(Build.SourcesDirectory)" ]; then
-                ls -la "$(Build.SourcesDirectory)"
-                echo "=== Listagem recursiva ==="
-                ls -laR "$(Build.SourcesDirectory)"
+              echo "=== Listando apenas diretórios em $(Build.SourcesDirectory) ==="
+              SRC_DIR="$(Build.SourcesDirectory)"
+              if [ -d "$SRC_DIR" ]; then
+                # lista somente diretórios de primeiro nível (não recursivo), imprime apenas o nome
+                find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -print0 \
+                  | xargs -0 -n1 basename \
+                  | sort
               else
-                echo "Diretório  não encontrado em $(Build.SourcesDirectory)"
+                echo "Diretório não encontrado: $SRC_DIR"
                 exit 1
               fi
-            displayName: 'Listar arquivos'
+            displayName: 'Listar diretórios - $(Build.SourcesDirectory)'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
