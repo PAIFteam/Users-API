@@ -46,8 +46,6 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
-          - checkout: platforminfra
-            path: platform-infra
           - checkout: usersapi
             path: users-api
           - checkout: notificationsapi
@@ -56,13 +54,15 @@ stages:
             path: catalog-api
           - checkout: paymentsapi
             path: payments-api
+          - checkout: platforminfra
+            path: platform-infra
           - script: |
               echo "=== Listando arquivos do repositório users-api ==="
-              echo "Caminho: $(Build.SourcesDirectory)/users-api"
-              if [ -d "$(Build.SourcesDirectory)/users-api" ]; then
-                ls -la "$(Build.SourcesDirectory)/users-api"
+              echo "Caminho: $(Build.SourcesDirectory)/s/users-api"
+              if [ -d "$(Build.SourcesDirectory)/s/users-api" ]; then
+                ls -la "$(Build.SourcesDirectory)/s/users-api"
                 echo "=== Listagem recursiva ==="
-                ls -laR "$(Build.SourcesDirectory)/users-api"
+                ls -laR "$(Build.SourcesDirectory)/s/users-api"
               else
                 echo "Diretório users-api não encontrado em $(Build.SourcesDirectory)"
                 exit 1
@@ -86,7 +86,7 @@ stages:
               containerRegistry: $(acrServiceConnection)
               repository: 'usersapi'
               command: 'build'
-              dockerfile: 'src/Dockerfile'
+              dockerfile: 'users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
                 $(imageTag)
