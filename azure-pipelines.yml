@@ -73,7 +73,7 @@ stages:
             inputs:
               containerRegistry: $(acrServiceConnection)
               repository: 'usersapi'
-              command: 'build'
+              command: 'buildAndPush'
               dockerfile: 'users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
@@ -84,9 +84,9 @@ stages:
             displayName: 'Build & Push Notifications API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/notifications-api'
+              repository: 'notifications-api'
               command: 'buildAndPush'
-              dockerfile: 'notifications-api/src/Notifications.API/Dockerfile'
+              dockerfile: 'notifications-api/src/Dockerfile'
               buildContext: 'notifications-api'
               tags: |
                 $(imageTag)
@@ -96,9 +96,9 @@ stages:
             displayName: 'Build & Push Catalog API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/catalog-api'
+              repository: 'catalog-api'
               command: 'buildAndPush'
-              dockerfile: 'catalog-api/src/Catalog.API/Dockerfile'
+              dockerfile: 'catalog-api/src/Dockerfile'
               buildContext: 'catalog-api'
               tags: |
                 $(imageTag)
@@ -108,9 +108,9 @@ stages:
             displayName: 'Build & Push Payments API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/payments-api'
+              repository: 'payments-api'
               command: 'buildAndPush'
-              dockerfile: 'payments-api/src/Payments.API/Dockerfile'
+              dockerfile: 'payments-api/src/Dockerfile'
               buildContext: 'payments-api'
               tags: |
                 $(imageTag)
