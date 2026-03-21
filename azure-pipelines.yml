@@ -47,7 +47,7 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - checkout: usersapi
-            path: 'users-api'
+            path: 's/users-api'
           - checkout: notificationsapi
             path: notifications-api
           - checkout: catalogapi
@@ -77,7 +77,7 @@ stages:
               dockerfile: '../users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
-                '$(imageTag)/users-api'
+                $(imageTag)
                 latest
 
           - task: Docker@2
