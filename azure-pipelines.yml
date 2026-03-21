@@ -56,18 +56,6 @@ stages:
             path: payments-api
           - checkout: platforminfra
             path: platform-infra
-          # inserir dentro do job `Build`, após os passos de `checkout`
-          - script: |
-              echo "=== Listando apenas diretórios em $(System.DefaultWorkingDirectory) ==="
-              SRC_DIR="$(System.DefaultWorkingDirectory)"
-              if [ -d "$SRC_DIR" ]; then
-                # lista somente diretórios de primeiro nível e imprime apenas o nome
-                find "$SRC_DIR" -maxdepth 1 -mindepth 1 -type d -printf '%f\n' | sort
-              else
-                echo "Diretório não encontrado: $SRC_DIR"
-                exit 1
-              fi
-            displayName: 'Listar diretórios - $(System.DefaultWorkingDirectory)'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
@@ -86,7 +74,7 @@ stages:
               containerRegistry: $(acrServiceConnection)
               repository: 'usersapi'
               command: 'build'
-              dockerfile: 'users-api/src/Dockerfile'
+              dockerfile: '../users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
                 $(imageTag)
