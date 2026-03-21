@@ -5,7 +5,7 @@ trigger:
 
 resources:
   repositories:
-     - repository: usersapi
+    - repository: usersapi
       type: github
       name: PAIFteam/Users-API
       endpoint: PaifGames
