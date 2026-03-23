@@ -176,7 +176,7 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                COMPOSE="$(Build.SourcesDirectory)/s/platform-infra/docker-compose.yml"
+                COMPOSE="$(Build.SourcesDirectory)/docker-compose.yml"
                 if [ ! -f "$COMPOSE" ]; then
                   echo "docker-compose.yml não encontrado: $COMPOSE"
                   exit 1
