@@ -6,28 +6,34 @@ trigger:
 resources:
   repositories:
     - repository: platforminfra
-      type: git
-      name: YourProject/Platform-INFRA
+      type: github
+      name: PAIFteam/Platform-INFRA
+      endpoint: PAIFteam
     - repository: usersapi
-      type: git
-      name: YourProject/Users-API
+      type: github
+      name: PAIFteam/Users-API
+      endpoint: PAIFteam
     - repository: notificationsapi
-      type: git
-      name: YourProject/Notifications-API
+      type: github
+      name: PAIFteam/Notifications-API
+      endpoint: PAIFteam
     - repository: catalogapi
-      type: git
-      name: YourProject/Catalog-API
+      type: github
+      name: PAIFteam/Catalog-API
+      endpoint: PAIFteam
     - repository: paymentsapi
-      type: git
-      name: YourProject/Payments-API
+      type: github
+      name: PAIFteam/Payments-API
+      endpoint: PAIFteam
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
-  acrServiceConnection: 'k8spaifgames'   # Service connection ACR (usado pelo Docker task)
-  acrName: 'k8spaifgames'                                 # nome do ACR (sem .azurecr.io)
-  acrLoginServer: 'k8spaifgames.azurecr.io'               # ex: youracr.azurecr.io
+  acrServiceConnection: 'dockerpaifgames'   # Service connection ACR (usado pelo Docker task)
+  acrName: 'acrpaifgames'                                 # nome do ACR (sem .azurecr.io)
+  acrLoginServer: 'acrpaifgames.azurecr.io'               # ex: youracr.azurecr.io
   resourceGroup: 'rg-paifgames'
   location: 'eastus'
+  vmResourceGroup: 'rg-paifgames'        # <--- resource group onde o VM/infra já existe
   aksClusterName: 'k8spaifgames'
   kubernetesNamespace: 'paifgames-ns'
   dotnetVersion: '8.0.x'
@@ -41,32 +47,35 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
-          - checkout: self
-          - checkout: platforminfra
-            path: platform-infra
           - checkout: usersapi
-            path: users-api
+            path: 's/users-api'
           - checkout: notificationsapi
-            path: notifications-api
+            path: 's/notifications-api'
           - checkout: catalogapi
-            path: catalog-api
+            path: 's/catalog-api'
           - checkout: paymentsapi
-            path: payments-api
-
+            path: 's/payments-api'
+          - checkout: platforminfra
+            path: 's/platform-infra'
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
             inputs:
               packageType: 'sdk'
               version: $(dotnetVersion)
-
+          - task: Docker@2
+            displayName: 'Login into Registry $(acrServiceConnection)' 
+            inputs:
+              containerRegistry: $(acrServiceConnection) 
+              command: 'login'
+          
           # Ajuste os caminhos dos Dockerfiles conforme a estrutura real de cada repositório.
           - task: Docker@2
             displayName: 'Build & Push Users API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/users-api'
+              repository: 'users-api'
               command: 'buildAndPush'
-              dockerfile: 'users-api/src/Users.API/Dockerfile'
+              dockerfile: 'users-api/src/Dockerfile'
               buildContext: 'users-api'
               tags: |
                 $(imageTag)
@@ -76,9 +85,9 @@ stages:
             displayName: 'Build & Push Notifications API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/notifications-api'
+              repository: 'notifications-api'
               command: 'buildAndPush'
-              dockerfile: 'notifications-api/src/Notifications.API/Dockerfile'
+              dockerfile: 'notifications-api/src/Dockerfile'
               buildContext: 'notifications-api'
               tags: |
                 $(imageTag)
@@ -88,9 +97,9 @@ stages:
             displayName: 'Build & Push Catalog API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/catalog-api'
+              repository: 'catalog-api'
               command: 'buildAndPush'
-              dockerfile: 'catalog-api/src/Catalog.API/Dockerfile'
+              dockerfile: 'catalog-api/src/Dockerfile'
               buildContext: 'catalog-api'
               tags: |
                 $(imageTag)
@@ -100,16 +109,16 @@ stages:
             displayName: 'Build & Push Payments API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: '$(acrLoginServer)/payments-api'
+              repository: 'payments-api'
               command: 'buildAndPush'
-              dockerfile: 'payments-api/src/Payments.API/Dockerfile'
+              dockerfile: 'payments-api/src/Dockerfile'
               buildContext: 'payments-api'
               tags: |
                 $(imageTag)
                 latest
 
   - stage: CreateAKS
-    displayName: 'Criar AKS (k8spaifgames)'
+    displayName: 'Criar AKS (k8spaifgames) em vmpaifgames (Central US - Zona 1)'
     dependsOn: BuildAndPush
     jobs:
       - job: Create
@@ -117,32 +126,16 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2
-            displayName: 'Criar RG, ACR (se necessário) e AKS básico'
+            displayName: 'Criar/Configurar AKS no resource group vmpaifgames'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
               scriptLocation: 'inlineScript'
               inlineScript: |
-                set -e
-                az group create --name $(resourceGroup) --location $(location)
-
-                # cria ACR se não existir
-                if ! az acr show -n $(acrName) -g $(resourceGroup) >/dev/null 2>&1; then
-                  az acr create -n $(acrName) -g $(resourceGroup) --sku Basic --admin-enabled true
-                fi
-
-                # cria AKS simples se não existir e vincula ao ACR
-                if ! az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1; then
-                  az aks create -g $(resourceGroup) -n $(aksClusterName) \
-                    --node-count 1 \
-                    --generate-ssh-keys \
-                    --enable-managed-identity \
-                    --attach-acr $(acrName)
-                fi
-
+                set -e 
+                az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1 ||
+                az aks create -g $(resourceGroup) -n $(aksClusterName) --node-count 1 --node-vm-size Standard_D2s_v3 --generate-ssh-keys --enable-managed-identity --attach-acr $(acrName) --location centralus
                 az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
-                kubectl get nodes || true
-
   - stage: Deploy
     displayName: 'Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
     dependsOn: CreateAKS
@@ -151,98 +144,105 @@ stages:
         pool:
           vmImage: 'ubuntu-latest'
         steps:
+          - checkout: platforminfra
+            path: 's/platform-infra'
+
           - task: AzureCLI@2
-          displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
-          inputs:
-            azureSubscription: $(azureSubscription)
-            scriptType: 'bash'
-            scriptLocation: 'inlineScript'
-            inlineScript: |
-              set -e
-              COMPOSE="$(Build.SourcesDirectory)/docker-compose.yml"
+            displayName: 'Configurar kubectl e login no ACR'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                RG="$(vmResourceGroup)"
+                CLUSTER="$(aksClusterName)"
+                ACR_NAME="$(acrName)"
+                NAMESPACE="$(kubernetesNamespace)"
 
-              echo "==== DEBUG: PATHS ===="
-              echo "Build.SourcesDirectory=$(Build.SourcesDirectory)"
-              echo "COMPOSE=$COMPOSE"
-              echo
+                az aks get-credentials -g "$RG" -n "$CLUSTER" --overwrite-existing
 
-              echo "==== DEBUG: LISTAGEM DO REPO platform-infra ===="
-              ls -la "$(Build.SourcesDirectory)/s/platform-infra" || true
-              echo
+                # login no ACR para operações locais (AKS com --attach-acr já tem permissão)
+                az acr login -n "$ACR_NAME" || true
 
-              echo "==== DEBUG: ARQUIVOS docker-compose* ENCONTRADOS ===="
-              find "$(Build.SourcesDirectory)" -maxdepth 4 \( -name "docker-compose.yml" -o -name "docker-compose.yaml" \) -print || true
-              echo
+                kubectl create namespace "$NAMESPACE" || true
+                kubectl config set-context --current --namespace="$NAMESPACE"
 
-              if [ ! -f "$COMPOSE" ]; then
-                echo "docker-compose.yml não encontrado: $COMPOSE"
-                exit 1
-              fi
+          - task: AzureCLI@2
+            displayName: 'Conectar no AKS'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
 
-              echo "==== DEBUG: OCORRÊNCIAS DE CHAVES YAML ===="
-              grep -n "^x-api-common-env:" "$COMPOSE" || true
-              grep -n "^x-api-common:" "$COMPOSE" || true
-              grep -n "^services:" "$COMPOSE" || true
-              grep -n "^volumes:" "$COMPOSE" || true
-              echo
+                RG="rg-paifgames"
+                CLUSTER="k8spaifgames"
 
-              echo "==== DEBUG: CONTEÚDO DO COMPOSE (LINHAS 1-220) ===="
-              nl -ba "$COMPOSE" | sed -n '1,220p'
-              echo
+                echo "Login OK?"
+                az account show
 
-              # instala kompose se necessário
-              if ! command -v kompose >/dev/null 2>&1; then
-                curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
-                chmod +x kompose
-                sudo mv kompose /usr/local/bin/kompose
-              fi
+                echo "Getting credentials..."
+                az aks get-credentials -g "$RG" -n "$CLUSTER" --overwrite-existing
 
-              ACR="$(acrLoginServer)"
-              TAG="$(imageTag)"
-              export IMAGE_TAG="$TAG"
-              tmpfile=$(mktemp)
-
-              echo "==== DEBUG: IMAGE_TAG ===="
-              echo "IMAGE_TAG=$IMAGE_TAG"
-              echo
-
-              # ajusta imagens do compose para apontar ao ACR com a tag do build
-              awk -v acr="$ACR" -v tag="$TAG" '
-                /^([[:space:]]*)image:/ {
-                  indent=substr($0,1,match($0,/image:/)-1)
-                  sub(/^[[:space:]]*image:[[:space:]]*/,"")
-                  img=$0
-                  gsub(/[ \t\r\n]+$/,"")
-                  split(img,a,":")
-                  name=a[1]
-                  if (index(name,"/")>0) { split(name,parts,"/"); name=parts[length(parts)]; }
-                  print indent "image: " acr "/" name ":" tag
-                  next
-                }
-                { print $0 }
-              ' "$COMPOSE" > "$tmpfile" && mv "$tmpfile" "$COMPOSE"
-
-              echo "==== DEBUG: COMPOSE APÓS REESCRITA ===="
-              nl -ba "$COMPOSE" | sed -n '1,220p'
-              echo
-
-              mkdir -p k8s-manifests
-              kompose -f "$COMPOSE" convert -o k8s-manifests
-
-              echo "==== DEBUG: MANIFESTS GERADOS ===="
-              ls -la k8s-manifests || true
-              echo
-
-              kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
-
-              for repo in users-api notifications-api catalog-api payments-api; do
-                REPO_K8S="$(Build.SourcesDirectory)/s/$repo/k8s"
-                if [ -d "$REPO_K8S" ]; then
-                  kubectl apply -n $(kubernetesNamespace) -f "$REPO_K8S" || true
+                echo "Validando conexão..."
+                kubectl get nodes
+          - task: AzureCLI@2
+            displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+                COMPOSE="$(Build.SourcesDirectory)/docker-compose.yml"
+                if [ ! -f "$COMPOSE" ]; then
+                  echo "docker-compose.yml não encontrado: $COMPOSE"
+                  exit 1
                 fi
-              done
 
-              kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
+                # instala kompose se necessário
+                if ! command -v kompose >/dev/null 2>&1; then
+                  curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
+                  chmod +x kompose
+                  sudo mv kompose /usr/local/bin/kompose
+                fi
+
+                ACR="$(acrLoginServer)"
+                TAG="$(imageTag)"
+                tmpfile=$(mktemp)
+
+                # ajusta imagens do compose para apontar ao ACR com a tag do build
+                awk -v acr="$ACR" -v tag="$TAG" '
+                  /^([[:space:]]*)image:/ {
+                    indent=substr($0,1,match($0,/image:/)-1)
+                    sub(/^[[:space:]]*image:[[:space:]]*/,"")
+                    img=$0
+                    gsub(/[ \t\r\n]+$/,"")
+                    split(img,a,":")
+                    name=a[1]
+                    if (index(name,"/")>0) { split(name,parts,"/"); name=parts[length(parts)]; }
+                    print indent "image: " acr "/" name ":" tag
+                    next
+                  }
+                  { print $0 }
+                ' "$COMPOSE" > "$tmpfile" && mv "$tmpfile" "$COMPOSE"
+
+                mkdir -p k8s-manifests
+                kompose -f "$COMPOSE" convert -o k8s-manifests
+
+                kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
+
+                # aplica manifests k8s específicos por repositório (se existirem)
+                for repo in users-api notifications-api catalog-api payments-api; do
+                  REPO_K8S="$(Build.SourcesDirectory)/s/$repo/k8s"
+                  if [ -d "$REPO_K8S" ]; then
+                    kubectl apply -n $(kubernetesNamespace) -f "$REPO_K8S" || true
+                  fi
+                done
+
+                kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
 
           - task: AzureCLI@2
             displayName: 'Verificações finais'
@@ -252,7 +252,6 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
                 kubectl get pods,svc -n $(kubernetesNamespace) -o wide
                 echo "Logs SQL Server (se existir):"
                 kubectl logs -n $(kubernetesNamespace) -l app=sqlserver --tail=50 || true
@@ -268,6 +267,6 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - script: |
-              echo "Pipeline falhou. Para remover resources manualmente execute:"
-              echo "az aks delete --resource-group $(resourceGroup) --name $(aksClusterName) --yes --no-wait"
+              echo "Pipeline falhou. Para remover o AKS execute:"
+              echo "az aks delete --resource-group $(vmResourceGroup) --name $(aksClusterName) --yes --no-wait"
             displayName: 'Instruções de cleanup'
