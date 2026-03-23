@@ -169,6 +169,26 @@ stages:
                 kubectl config set-context --current --namespace="$NAMESPACE"
 
           - task: AzureCLI@2
+            displayName: 'Conectar no AKS'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+
+                RG="rg-paifgames"
+                CLUSTER="k8spaifgames"
+
+                echo "Login OK?"
+                az account show
+
+                echo "Getting credentials..."
+                az aks get-credentials -g "$RG" -n "$CLUSTER" --overwrite-existing
+
+                echo "Validando conexão..."
+                kubectl get nodes
+          - task: AzureCLI@2
             displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
             inputs:
               azureSubscription: $(azureSubscription)
