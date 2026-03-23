@@ -9,7 +9,7 @@ resources:
       type: github
       name: PAIFteam/Platform-INFRA
       endpoint: PAIFteam
-    - repository: usersapi
+    - repository: users-api
       type: github
       name: PAIFteam/Users-API
       endpoint: PAIFteam
