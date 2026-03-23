@@ -196,13 +196,13 @@ stages:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -e
-                COMPOSE="$(Build.SourcesDirectory)/docker-compose.yml"
+                COMPOSE="$(Build.SourcesDirectory)/s/platform-infra/docker-compose.yml"
+
                 if [ ! -f "$COMPOSE" ]; then
                   echo "docker-compose.yml não encontrado: $COMPOSE"
                   exit 1
                 fi
 
-                # instala kompose se necessário
                 if ! command -v kompose >/dev/null 2>&1; then
                   curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
                   chmod +x kompose
@@ -211,28 +211,41 @@ stages:
 
                 ACR="$(acrLoginServer)"
                 TAG="$(imageTag)"
+                export IMAGE_TAG="$TAG"
                 tmpfile=$(mktemp)
 
-                # ajusta imagens do compose para apontar ao ACR com a tag do build
                 awk -v acr="$ACR" -v tag="$TAG" '
                   /^([[:space:]]*)image:/ {
                     indent=substr($0,1,match($0,/image:/)-1)
-                    sub(/^[[:space:]]*image:[[:space:]]*/,"")
-                    img=$0
-                    gsub(/[ \t\r\n]+$/,"")
-                    split(img,a,":")
+                    line=$0
+                    sub(/^[[:space:]]*image:[[:space:]]*/,"",line)
+                    gsub(/[ \t\r\n]+$/,"",line)
+
+                    split(line,a,":")
                     name=a[1]
-                    if (index(name,"/")>0) { split(name,parts,"/"); name=parts[length(parts)]; }
-                    print indent "image: " acr "/" name ":" tag
+
+                    if (index(name,"/")>0) {
+                      split(name,parts,"/")
+                      name=parts[length(parts)]
+                    }
+
+                    if (name == "usersapi" || name == "payments-api" || name == "notifications-api" || name == "catalog-api") {
+                      print indent "image: " acr "/" name ":" tag
+                    } else {
+                      print $0
+                    }
                     next
                   }
                   { print $0 }
                 ' "$COMPOSE" > "$tmpfile" && mv "$tmpfile" "$COMPOSE"
 
+                echo "==== COMPOSE FINAL ===="
+                nl -ba "$COMPOSE" | sed -n '1,220p'
+
                 mkdir -p k8s-manifests
                 kompose -f "$COMPOSE" convert -o k8s-manifests
 
-                kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
+                  kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
 
                 # aplica manifests k8s específicos por repositório (se existirem)
                 for repo in users-api notifications-api catalog-api payments-api; do
