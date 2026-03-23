@@ -85,7 +85,7 @@ stages:
             displayName: 'Build & Push Notifications API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: 'notifications-api'
+              repository: 'notificationsapi'
               command: 'buildAndPush'
               dockerfile: 'notifications-api/src/Dockerfile'
               buildContext: 'notifications-api'
@@ -97,7 +97,7 @@ stages:
             displayName: 'Build & Push Catalog API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: 'catalog-api'
+              repository: 'catalogapi'
               command: 'buildAndPush'
               dockerfile: 'catalog-api/src/Dockerfile'
               buildContext: 'catalog-api'
@@ -109,7 +109,7 @@ stages:
             displayName: 'Build & Push Payments API'
             inputs:
               containerRegistry: $(acrServiceConnection)
-              repository: 'payments-api'
+              repository: 'paymentsapi'
               command: 'buildAndPush'
               dockerfile: 'payments-api/src/Dockerfile'
               buildContext: 'payments-api'
