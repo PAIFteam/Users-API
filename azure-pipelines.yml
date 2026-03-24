@@ -189,6 +189,21 @@ stages:
                 echo "Validando conexão..."
                 kubectl get nodes
           - task: AzureCLI@2
+            displayName: 'Aplicar PVC do SQL Server'
+            inputs:
+              azureSubscription: $(azureSubscription)
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                set -e
+
+                echo "Aplicando PVC sqlserver-data..."
+
+                kubectl apply -f "$(Build.SourcesDirectory)/k8s/infra/03-sqlserver-pvc.yaml"
+
+                echo "PVC status:"
+                kubectl get pvc -n $(kubernetesNamespace)
+          - task: AzureCLI@2
             displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
             inputs:
               azureSubscription: $(azureSubscription)
