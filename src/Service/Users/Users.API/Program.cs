@@ -63,9 +63,7 @@ builder.Services.AddRabbitMq(builder.Configuration);
 
 var app = builder.Build();
 
-if (!app.Environment.IsProduction())
-{
-    app.UseSwagger(c =>
+app.UseSwagger(c =>
     {
         c.PreSerializeFilters.Add((swagger, httpReq) =>
         {
@@ -86,7 +84,6 @@ if (!app.Environment.IsProduction())
 
         c.SwaggerEndpoint("./v1/swagger.json", "API v1");
     });
-}
 
 app.UseHttpsRedirection();
 
