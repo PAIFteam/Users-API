@@ -200,9 +200,10 @@ stages:
                 echo "Aplicando PVC sqlserver-data..."
 
                 kubectl apply -f "$(Build.SourcesDirectory)/k8s/infra/03-sqlserver-pvc.yaml"
+                kubectl apply -f "$(Build.SourcesDirectory)/k8s/infra/04-sqlserver-deploy-svc.yaml"
 
-                echo "PVC status:"
                 kubectl get pvc -n $(kubernetesNamespace)
+                kubectl get deployment sqlserver -n $(kubernetesNamespace)
           - task: AzureCLI@2
             displayName: 'Converter docker-compose (Platform-INFRA) -> manifests k8s e aplicar'
             inputs:
