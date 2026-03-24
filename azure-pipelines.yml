@@ -257,6 +257,38 @@ stages:
 
                 kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
 
+           - task: AzureCLI@2
+          displayName: 'Instalar/atualizar NGINX Ingress Controller'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+
+              kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/cloud/deploy.yaml
+              kubectl rollout status deployment/ingress-nginx-controller -n ingress-nginx --timeout=10m
+
+        - task: AzureCLI@2
+          displayName: 'Aplicar Services e Ingress versionados'
+          inputs:
+            azureSubscription: $(azureSubscription)
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: |
+              set -e
+
+              kubectl apply -f "$(Build.SourcesDirectory)/k8s/services/users/service.yaml"
+              kubectl apply -f "$(Build.SourcesDirectory)/k8s/services/catalog/service.yaml"
+              kubectl apply -f "$(Build.SourcesDirectory)/k8s/services/payments/service.yaml"
+              kubectl apply -f "$(Build.SourcesDirectory)/k8s/services/notifications/service.yaml"
+
+              kubectl apply -f "$(Build.SourcesDirectory)/k8s/ingress/paifgames-ingress.yaml"
+
+              kubectl get svc -n $(kubernetesNamespace)
+              kubectl get ingress -n $(kubernetesNamespace)
+              kubectl get svc -n ingress-nginx
+
           - task: AzureCLI@2
             displayName: 'Verificações finais'
             inputs:
