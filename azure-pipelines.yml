@@ -178,7 +178,7 @@ stages:
                 set -e
 
                 RG="rg-paifgames-dev"
-                CLUSTER= $(aksClusterName)
+                CLUSTER= "$(aksClusterName)"
 
                 echo "Login OK?"
                 az account show
