@@ -41,7 +41,7 @@ variables:
 
 stages:
   - stage: BuildAndPush
-    displayName: 'Build solutions e push de imagens para ACR'
+    displayName: 'CI - Build solutions e push de imagens para ACR'
     jobs:
       - job: Build
         pool:
@@ -118,7 +118,7 @@ stages:
                 latest
 
   - stage: CreateAKS
-    displayName: 'Criar AKS (k8spaifgames) em vmpaifgames (Central US - Zona 1)'
+    displayName: 'Provision - Criar AKS (k8spaifgames) em vmpaifgames (Central US - Zona 1)'
     dependsOn: BuildAndPush
     jobs:
       - job: Create
@@ -137,7 +137,7 @@ stages:
                 az aks create -g $(resourceGroup) -n $(aksClusterName) --node-count 1 --node-vm-size Standard_D2s_v3 --generate-ssh-keys --enable-managed-identity --attach-acr $(acrName) --location centralus
                 az aks get-credentials -g $(resourceGroup) -n $(aksClusterName) --overwrite-existing
   - stage: Deploy
-    displayName: 'Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
+    displayName: 'CD - Deploy docker-compose (Platform-INFRA) + APIs + infra no AKS'
     dependsOn: CreateAKS
     jobs:
       - job: DeployToAKS
