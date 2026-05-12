@@ -177,7 +177,7 @@ stages:
               inlineScript: |
                 set -e
 
-                RG="rg-paifgames"
+                RG="rg-paifgames-dev"
                 CLUSTER="k8spaifgames"
 
                 echo "Login OK?"
