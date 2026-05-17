@@ -1,4 +1,4 @@
-trigger:
+ï»¿trigger:
   branches:
     include:
       - main
@@ -20,6 +20,9 @@ resources:
     - repository: paymentsapi
       type: git
       name: YourProject/Payments-API
+    - repository: salescartapi
+      type: git
+      name: YourProject/SalesCart-API
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
@@ -34,8 +37,56 @@ variables:
   imageTag: '$(Build.BuildId)'
 
 stages:
+  - stage: Tests
+    displayName: 'Executar testes obrigatÃ³rios'
+    jobs:
+      - job: RunTests
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: self
+          - checkout: platforminfra
+            path: platform-infra
+          - checkout: usersapi
+            path: users-api
+          - checkout: notificationsapi
+            path: notifications-api
+          - checkout: catalogapi
+            path: catalog-api
+          - checkout: paymentsapi
+            path: payments-api
+          - checkout: salescartapi
+            path: salescart-api
+
+          - task: UseDotNet@2
+            displayName: 'Instalar .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotnetVersion)
+
+          - script: dotnet test "$(Build.SourcesDirectory)/users-api/tests/Users.UnitTests/Users.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=users-tests.trx"
+            displayName: 'Executar Users.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/catalog-api/tests/Catalog.UnitTests/Catalog.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=catalog-tests.trx"
+            displayName: 'Executar Catalog.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/payments-api/tests/Payments.UnitTests/Payments.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=payments-tests.trx"
+            displayName: 'Executar Payments.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/notifications-api/tests/Notifications.UnitTests/Notifications.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=notifications-tests.trx"
+            displayName: 'Executar Notifications.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/salescart-api/tests/SalesCart.UnitTests/SalesCart.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=salescart-tests.trx"
+            displayName: 'Executar SalesCart.UnitTests'
+
+          - task: PublishTestResults@2
+            displayName: 'Publicar resultados dos testes'
+            condition: always()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Agent.TempDirectory)'
+              failTaskOnFailedTests: true
+
   - stage: BuildAndPush
     displayName: 'Build solutions e push de imagens para ACR'
+    dependsOn: Tests
     jobs:
       - job: Build
         pool:
@@ -52,6 +103,8 @@ stages:
             path: catalog-api
           - checkout: paymentsapi
             path: payments-api
+          - checkout: salescartapi
+            path: salescart-api
 
           - task: UseDotNet@2
             displayName: 'Instalar .NET SDK'
@@ -59,7 +112,7 @@ stages:
               packageType: 'sdk'
               version: $(dotnetVersion)
 
-          # Ajuste os caminhos dos Dockerfiles conforme a estrutura real de cada repositório.
+          # Ajuste os caminhos dos Dockerfiles conforme a estrutura real de cada repositÃ³rio.
           - task: Docker@2
             displayName: 'Build & Push Users API'
             inputs:
@@ -117,7 +170,7 @@ stages:
           vmImage: 'ubuntu-latest'
         steps:
           - task: AzureCLI@2
-            displayName: 'Criar RG, ACR (se necessário) e AKS básico'
+            displayName: 'Criar RG, ACR (se necessÃ¡rio) e AKS bÃ¡sico'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
@@ -126,12 +179,12 @@ stages:
                 set -e
                 az group create --name $(resourceGroup) --location $(location)
 
-                # cria ACR se não existir
+                # cria ACR se nÃ£o existir
                 if ! az acr show -n $(acrName) -g $(resourceGroup) >/dev/null 2>&1; then
                   az acr create -n $(acrName) -g $(resourceGroup) --sku Basic --admin-enabled true
                 fi
 
-                # cria AKS simples se não existir e vincula ao ACR
+                # cria AKS simples se nÃ£o existir e vincula ao ACR
                 if ! az aks show -n $(aksClusterName) -g $(resourceGroup) >/dev/null 2>&1; then
                   az aks create -g $(resourceGroup) -n $(aksClusterName) \
                     --node-count 1 \
@@ -163,11 +216,11 @@ stages:
 
                 COMPOSE_PATH="$(Build.SourcesDirectory)/platform-infra/docker-compose.yml"
                 if [ ! -f "$COMPOSE_PATH" ]; then
-                  echo "docker-compose.yml não encontrado em $COMPOSE_PATH"
+                  echo "docker-compose.yml nÃ£o encontrado em $COMPOSE_PATH"
                   exit 1
                 fi
 
-                # instala kompose se necessário
+                # instala kompose se necessÃ¡rio
                 if ! command -v kompose >/dev/null 2>&1; then
                   curl -L https://github.com/kubernetes/kompose/releases/latest/download/kompose-linux-amd64 -o kompose
                   chmod +x kompose
@@ -184,7 +237,7 @@ stages:
                     sub(/^[[:space:]]*image:[[:space:]]*/,"")
                     svc=$0
                     gsub(/[ \t\r\n]+$/,"")
-                    # se já contém registry, usa só o nome e substitui tag
+                    # se jÃ¡ contÃ©m registry, usa sÃ³ o nome e substitui tag
                     split(svc,a,":")
                     name=a[1]
                     # remove eventual registry
@@ -205,7 +258,7 @@ stages:
                 kubectl create namespace $(kubernetesNamespace) || true
                 kubectl apply -n $(kubernetesNamespace) -f k8s-manifests
 
-                # aplica manifests k8s específicos por repositório (se existirem)
+                # aplica manifests k8s especÃ­ficos por repositÃ³rio (se existirem)
                 for repo in users-api notifications-api catalog-api payments-api; do
                   repo_k8s="$(Build.SourcesDirectory)/$repo/k8s"
                   if [ -d "$repo_k8s" ]; then
@@ -216,7 +269,7 @@ stages:
                 kubectl rollout status -n $(kubernetesNamespace) deployment --timeout=10m || true
 
           - task: AzureCLI@2
-            displayName: 'Verificações finais'
+            displayName: 'VerificaÃ§Ãµes finais'
             inputs:
               azureSubscription: $(azureSubscription)
               scriptType: 'bash'
@@ -241,4 +294,4 @@ stages:
           - script: |
               echo "Pipeline falhou. Para remover resources manualmente execute:"
               echo "az aks delete --resource-group $(resourceGroup) --name $(aksClusterName) --yes --no-wait"
-            displayName: 'Instruções de cleanup'
+            displayName: 'InstruÃ§Ãµes de cleanup'

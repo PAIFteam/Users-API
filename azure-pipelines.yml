@@ -25,6 +25,10 @@ resources:
       type: github
       name: PAIFteam/Payments-API
       endpoint: PAIFteam
+    - repository: salescartapi
+      type: github
+      name: PAIFteam/SalesCart-API
+      endpoint: PAIFteam
 
 variables:
   azureSubscription: 'k8spaifgames'    # Service connection do Azure DevOps
@@ -40,8 +44,50 @@ variables:
   imageTag: '$(Build.BuildId)'
 
 stages:
+  - stage: Tests
+    displayName: 'CI - Executar testes obrigatórios'
+    jobs:
+      - job: RunTests
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - checkout: usersapi
+            path: 's/users-api'
+          - checkout: notificationsapi
+            path: 's/notifications-api'
+          - checkout: catalogapi
+            path: 's/catalog-api'
+          - checkout: paymentsapi
+            path: 's/payments-api'
+          - checkout: salescartapi
+            path: 's/salescart-api'
+          - task: UseDotNet@2
+            displayName: 'Instalar .NET SDK'
+            inputs:
+              packageType: 'sdk'
+              version: $(dotnetVersion)
+          - script: dotnet test "$(Build.SourcesDirectory)/s/users-api/tests/Users.UnitTests/Users.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=users-tests.trx"
+            displayName: 'Executar Users.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/s/catalog-api/tests/Catalog.UnitTests/Catalog.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=catalog-tests.trx"
+            displayName: 'Executar Catalog.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/s/payments-api/tests/Payments.UnitTests/Payments.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=payments-tests.trx"
+            displayName: 'Executar Payments.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/s/notifications-api/tests/Notifications.UnitTests/Notifications.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=notifications-tests.trx"
+            displayName: 'Executar Notifications.UnitTests'
+          - script: dotnet test "$(Build.SourcesDirectory)/s/salescart-api/tests/SalesCart.UnitTests/SalesCart.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=salescart-tests.trx"
+            displayName: 'Executar SalesCart.UnitTests'
+          - task: PublishTestResults@2
+            displayName: 'Publicar resultados dos testes'
+            condition: always()
+            inputs:
+              testResultsFormat: 'VSTest'
+              testResultsFiles: '**/*.trx'
+              searchFolder: '$(Agent.TempDirectory)'
+              failTaskOnFailedTests: true
+
   - stage: BuildAndPush
     displayName: 'CI - Build solutions e push de imagens para ACR'
+    dependsOn: Tests
     jobs:
       - job: Build
         pool:
@@ -55,6 +101,8 @@ stages:
             path: 's/catalog-api'
           - checkout: paymentsapi
             path: 's/payments-api'
+          - checkout: salescartapi
+            path: 's/salescart-api'
           - checkout: platforminfra
             path: 's/platform-infra'
           - task: UseDotNet@2
