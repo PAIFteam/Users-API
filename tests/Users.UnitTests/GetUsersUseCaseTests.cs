@@ -42,6 +42,19 @@ public class GetUsersUseCaseTests
         result.Should().BeEmpty();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_LoginInexistente_DeveRetornarVazio()
+    {
+        var repository = new Mock<IGetUsersRepository>();
+        repository.Setup(x => x.GetUsersAsync("arthur", "Senha123!!")).ReturnsAsync(Array.Empty<User>());
+
+        var sut = new GetUsersUseCase(repository.Object, Mock.Of<ILogger<GetUsersUseCase>>(), BuildConfiguration("salt-global"));
+
+        var result = await sut.ExecuteAsync(new GetUsersInput { Login = "arthur", Password = "Senha123!!" });
+
+        result.Should().BeEmpty();
+    }
+
     private static IConfiguration BuildConfiguration(string salt)
         => new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Security:PasswordSalt"] = salt })

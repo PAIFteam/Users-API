@@ -38,6 +38,46 @@ public class PutUserUseCaseTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_LoginDuplicado_DeveRetornarFalha()
+    {
+        var repository = new Mock<IPutUserRepository>();
+        repository.Setup(x => x.PutLoginExisteAsync(It.IsAny<string>())).Returns(true);
+        repository.Setup(x => x.PutEmailExisteAsync(It.IsAny<string>())).Returns(false);
+        var sut = new PutUserUseCase(repository.Object, Mock.Of<ILogger<PutUserUseCase>>(), BuildConfiguration());
+
+        var result = await sut.ExecuteAsync(CreateInput());
+
+        result.Result.Should().BeFalse();
+        result.Message.Should().Be("Login já cadastrado");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_EmailDuplicado_DeveRetornarFalha()
+    {
+        var repository = new Mock<IPutUserRepository>();
+        repository.Setup(x => x.PutLoginExisteAsync(It.IsAny<string>())).Returns(false);
+        repository.Setup(x => x.PutEmailExisteAsync(It.IsAny<string>())).Returns(true);
+        var sut = new PutUserUseCase(repository.Object, Mock.Of<ILogger<PutUserUseCase>>(), BuildConfiguration());
+
+        var result = await sut.ExecuteAsync(CreateInput());
+
+        result.Result.Should().BeFalse();
+        result.Message.Should().Be("E-mail já cadastrado");
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_SenhaSemCaracteresEspeciais_DeveRetornarFalha()
+    {
+        var repository = new Mock<IPutUserRepository>();
+        var sut = CreateSut(repository);
+
+        var result = await sut.ExecuteAsync(CreateInput(password: "Senha1234"));
+
+        result.Result.Should().BeFalse();
+        result.Message.Should().Contain("2 caracteres especiais");
+    }
+
+    [Fact]
     public async Task ExecuteAsync_EntradaValida_DevePersistirSenhaHasheada()
     {
         var repository = new Mock<IPutUserRepository>();
@@ -70,12 +110,13 @@ public class PutUserUseCaseTests
         repository.Setup(x => x.PutLoginExisteAsync(It.IsAny<string>())).Returns(false);
         repository.Setup(x => x.PutEmailExisteAsync(It.IsAny<string>())).Returns(false);
 
-        var configuration = new ConfigurationBuilder()
+        return new PutUserUseCase(repository.Object, Mock.Of<ILogger<PutUserUseCase>>(), BuildConfiguration());
+    }
+
+    private static IConfiguration BuildConfiguration()
+        => new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Security:PasswordSalt"] = "salt-global" })
             .Build();
-
-        return new PutUserUseCase(repository.Object, Mock.Of<ILogger<PutUserUseCase>>(), configuration);
-    }
 
     private static PutUserInput CreateInput(string email = "user@test.com", string password = "Senha123!!")
         => new()
