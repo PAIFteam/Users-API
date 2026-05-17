@@ -66,15 +66,15 @@ stages:
             inputs:
               packageType: 'sdk'
               version: $(dotnetVersion)
-          - script: dotnet test "$(Build.SourcesDirectory)/s/users-api/tests/Users.UnitTests/Users.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=users-tests.trx"
+          - script: dotnet test "$(Pipeline.Workspace)/s/users-api/tests/Users.UnitTests/Users.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=users-tests.trx"
             displayName: 'Executar Users.UnitTests'
-          - script: dotnet test "$(Build.SourcesDirectory)/s/catalog-api/tests/Catalog.UnitTests/Catalog.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=catalog-tests.trx"
+          - script: dotnet test "$(Pipeline.Workspace)/s/catalog-api/tests/Catalog.UnitTests/Catalog.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=catalog-tests.trx"
             displayName: 'Executar Catalog.UnitTests'
-          - script: dotnet test "$(Build.SourcesDirectory)/s/payments-api/tests/Payments.UnitTests/Payments.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=payments-tests.trx"
+          - script: dotnet test "$(Pipeline.Workspace)/s/payments-api/tests/Payments.UnitTests/Payments.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=payments-tests.trx"
             displayName: 'Executar Payments.UnitTests'
-          - script: dotnet test "$(Build.SourcesDirectory)/s/notifications-api/tests/Notifications.UnitTests/Notifications.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=notifications-tests.trx"
+          - script: dotnet test "$(Pipeline.Workspace)/s/notifications-api/tests/Notifications.UnitTests/Notifications.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=notifications-tests.trx"
             displayName: 'Executar Notifications.UnitTests'
-          - script: dotnet test "$(Build.SourcesDirectory)/s/salescart-api/tests/SalesCart.UnitTests/SalesCart.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=salescart-tests.trx"
+          - script: dotnet test "$(Pipeline.Workspace)/s/salescart-api/tests/SalesCart.UnitTests/SalesCart.UnitTests.csproj" --configuration Release --logger "trx;LogFileName=salescart-tests.trx"
             displayName: 'Executar SalesCart.UnitTests'
           - task: PublishTestResults@2
             displayName: 'Publicar resultados dos testes'
